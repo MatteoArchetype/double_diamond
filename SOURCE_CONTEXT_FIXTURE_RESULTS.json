@@ -1,0 +1,17 @@
+{
+  "cycle": 148,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "browser_checks": {
+    "retained_text_and_review_visible": true,
+    "synthetic_label_retained": true,
+    "authenticity_boundary_visible": true,
+    "markup_rendered_as_inert_text": true,
+    "intake_draft_preserved_during_inspection": true,
+    "section_navigation_preserves_panel_and_draft": true,
+    "case_change_clears_old_panel": true,
+    "historical_missing_context_explicit": true,
+    "refresh_clears_panel": true,
+    "healthcare_untouched": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "cycle": 141,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_transaction_tests": 31,
+  "browser_checks": {
+    "question_before_interpretation": true,
+    "new_claim_selects_question_explicitly": true,
+    "second_question_appends_link": true,
+    "questions_remain_open": true,
+    "source_synthetic_labels_preserved": true,
+    "define_choices_default_unchecked": true,
+    "define_records_only_selected_question": true,
+    "separate_phase_proposal_approval_application": true,
+    "saved_visit_retains_question_context": true,
+    "refresh_preserves_saved_questions_and_links": true,
+    "healthcare_case_untouched": true
+  }
+}

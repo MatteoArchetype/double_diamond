@@ -1,0 +1,438 @@
+{
+  "report": {
+    "assessments": [
+      {
+        "assessment": {
+          "assessment_id": "fixture-assessment",
+          "assessor": "fixture-analyst",
+          "claim_digest": "19a8153ed8e2d8eefb233b492810f707ab4712bce1a3155c88d279261497f639",
+          "claim_id": "fixture-claim",
+          "dimensions": {
+            "baseline_quality": "unknown",
+            "causal_attribution": "unknown",
+            "claim_fitness": "unknown",
+            "context_completeness": "unknown",
+            "directness": "unknown",
+            "independence": "unknown",
+            "outcome_validity": "unknown",
+            "recency": "unknown",
+            "selection_risk": "unknown",
+            "strength": "unknown",
+            "systemic_relevance": "unknown",
+            "transferability": "unknown"
+          },
+          "evidence_digest": "a384cabb39087995ae0684ccd9e7578611c35466782ae72430525eddfd84dedc",
+          "evidence_id": "synthetic-fixture-1",
+          "evidence_origin": "synthetic_only",
+          "limitations": [
+            "Synthetic fixture only; no real study"
+          ],
+          "rationale": "Advisory fixture assessment",
+          "status": "advisory"
+        },
+        "current": true
+      }
+    ],
+    "brief": {
+      "text": "Compare synthetic interpretations within this demonstration."
+    },
+    "claims": [
+      {
+        "claim_id": "fixture-alternative",
+        "epistemic_label": "advisory interpretation",
+        "evidence": [
+          {
+            "evidence": {
+              "evidence_id": "synthetic-fixture-1",
+              "exact_location": "fixture line 2",
+              "finding": "SYNTHETIC FIXTURE: Example participants chose option A.",
+              "independence_cluster": "fixture-only",
+              "metadata": {
+                "fixture": true,
+                "published_at": null,
+                "publisher": "Fixture generator",
+                "retrieved_at": "2026-10-21",
+                "title": "Synthetic workflow fixture",
+                "url": "https://example.invalid/synthetic-fixture"
+              },
+              "provenance": "synthetic",
+              "source_id": "synthetic-fixture-1",
+              "synthetic": true
+            },
+            "evidence_id": "synthetic-fixture-1",
+            "source": null,
+            "synthetic": true
+          }
+        ],
+        "evidence_origin": "synthetic_only",
+        "interpretation": {
+          "analysis_status": "advisory",
+          "claim": "SYNTHETIC FIXTURE: alternative interpretations remain untested.",
+          "claim_id": "fixture-alternative",
+          "claim_type": "descriptive",
+          "disposition": "unresolved",
+          "evidence_ids": [
+            "synthetic-fixture-1"
+          ],
+          "evidence_origin": "synthetic_only",
+          "status": "draft"
+        }
+      },
+      {
+        "claim_id": "fixture-claim",
+        "epistemic_label": "advisory interpretation",
+        "evidence": [
+          {
+            "evidence": {
+              "evidence_id": "synthetic-fixture-1",
+              "exact_location": "fixture line 2",
+              "finding": "SYNTHETIC FIXTURE: Example participants chose option A.",
+              "independence_cluster": "fixture-only",
+              "metadata": {
+                "fixture": true,
+                "published_at": null,
+                "publisher": "Fixture generator",
+                "retrieved_at": "2026-10-21",
+                "title": "Synthetic workflow fixture",
+                "url": "https://example.invalid/synthetic-fixture"
+              },
+              "provenance": "synthetic",
+              "source_id": "synthetic-fixture-1",
+              "synthetic": true
+            },
+            "evidence_id": "synthetic-fixture-1",
+            "source": null,
+            "synthetic": true
+          }
+        ],
+        "evidence_origin": "synthetic_only",
+        "interpretation": {
+          "analysis_status": "advisory",
+          "belief_history": [
+            {
+              "cycle_id": "fixture-analysis",
+              "previous": {
+                "analysis_status": "advisory",
+                "claim": "SYNTHETIC FIXTURE: the bounded example records option A.",
+                "claim_id": "fixture-claim",
+                "claim_type": "descriptive",
+                "disposition": "draft",
+                "evidence_ids": [
+                  "synthetic-fixture-1"
+                ],
+                "evidence_origin": "synthetic_only",
+                "status": "draft"
+              },
+              "reason": "Advisory fixture analysis, not research approval"
+            },
+            {
+              "cycle_id": "fixture-analysis",
+              "previous": {
+                "analysis_status": "advisory",
+                "claim": "SYNTHETIC FIXTURE: the bounded example records option A.",
+                "claim_id": "fixture-claim",
+                "claim_type": "descriptive",
+                "confidence": "unknown",
+                "disposition": "draft",
+                "evidence_ids": [
+                  "synthetic-fixture-1"
+                ],
+                "evidence_origin": "synthetic_only",
+                "status": "draft"
+              },
+              "reason": "Retain only as a synthetic demonstration"
+            }
+          ],
+          "claim": "SYNTHETIC FIXTURE: the bounded example records option A.",
+          "claim_id": "fixture-claim",
+          "claim_type": "descriptive",
+          "confidence": "unknown",
+          "disposition": "qualify",
+          "evidence_ids": [
+            "synthetic-fixture-1"
+          ],
+          "evidence_origin": "synthetic_only",
+          "material_uncertainties": [
+            "fixture-uncertainty"
+          ],
+          "status": "qualified"
+        }
+      }
+    ],
+    "content_digest": "4e337a076e8c11964a7f470d1787cfbf40ae29b06846f8f0062b00c0cf181f6b",
+    "contradictions": {
+      "fixture-contradiction": {
+        "claim_a": "fixture-claim",
+        "claim_b": "fixture-alternative",
+        "contradiction_id": "fixture-contradiction",
+        "disposition": "unresolved",
+        "issue": "Synthetic interpretations require further comparison"
+      }
+    },
+    "gates": {
+      "fixture-phase-alternatives": {
+        "action": {
+          "action": "phase_transition",
+          "payload": {
+            "from_phase": "definition",
+            "research_digest": "3d358ab9b5020a04b10119b41eeecf19b16412bb3bb1d31c5804d7ac84e953ea",
+            "to_phase": "alternatives",
+            "workflow_id": "fixture-workflow"
+          },
+          "type": "gated_action"
+        },
+        "action_digest": "f0cb2d42fb133248bfda8d32403198a420960ce3401133b55fbed6dab45e24e6",
+        "decision_actor": "fixture-human",
+        "decision_operation_id": "fixture-phase-alternatives-decision",
+        "decision_rationale": "Simulated fixture decision only",
+        "execution_operation_id": "fixture-workflow-16",
+        "gate_id": "fixture-phase-alternatives",
+        "gate_type": "phase_transition",
+        "proposal_operation_id": "fixture-phase-alternatives-proposal",
+        "proposal_rationale": "Simulated fixture decision only",
+        "proposer": "fixture-human",
+        "status": "executed",
+        "target_digest": "f0cb2d42fb133248bfda8d32403198a420960ce3401133b55fbed6dab45e24e6"
+      },
+      "fixture-phase-definition": {
+        "action": {
+          "action": "phase_transition",
+          "payload": {
+            "from_phase": "discovery",
+            "research_digest": "5689bd3623b14fae060873835d4d595a2df55f87208c3fe2fa277949efaed015",
+            "to_phase": "definition",
+            "workflow_id": "fixture-workflow"
+          },
+          "type": "gated_action"
+        },
+        "action_digest": "01eec66c043d1a882fa4528da7142d9213e1b7aac5a0564802304a989f1f00ff",
+        "decision_actor": "fixture-human",
+        "decision_operation_id": "fixture-phase-definition-decision",
+        "decision_rationale": "Simulated fixture decision only",
+        "execution_operation_id": "fixture-workflow-12",
+        "gate_id": "fixture-phase-definition",
+        "gate_type": "phase_transition",
+        "proposal_operation_id": "fixture-phase-definition-proposal",
+        "proposal_rationale": "Simulated fixture decision only",
+        "proposer": "fixture-human",
+        "status": "executed",
+        "target_digest": "01eec66c043d1a882fa4528da7142d9213e1b7aac5a0564802304a989f1f00ff"
+      },
+      "fixture-phase-discovery": {
+        "action": {
+          "action": "phase_transition",
+          "payload": {
+            "from_phase": "brief",
+            "research_digest": "576cd73eeff0867cc0e4e19df04536a93e2db2e2ee61fe1828a5d520ee6a4165",
+            "to_phase": "discovery",
+            "workflow_id": "fixture-workflow"
+          },
+          "type": "gated_action"
+        },
+        "action_digest": "c91995b4a45f21cc2a2fbf06ccfc506a6dd54e141b6cbdf07acf1a48bfaf6729",
+        "decision_actor": "fixture-human",
+        "decision_operation_id": "fixture-phase-discovery-decision",
+        "decision_rationale": "Simulated fixture decision only",
+        "execution_operation_id": "fixture-workflow-8",
+        "gate_id": "fixture-phase-discovery",
+        "gate_type": "phase_transition",
+        "proposal_operation_id": "fixture-phase-discovery-proposal",
+        "proposal_rationale": "Simulated fixture decision only",
+        "proposer": "fixture-human",
+        "status": "executed",
+        "target_digest": "c91995b4a45f21cc2a2fbf06ccfc506a6dd54e141b6cbdf07acf1a48bfaf6729"
+      },
+      "fixture-phase-synthesis": {
+        "action": {
+          "action": "phase_transition",
+          "payload": {
+            "from_phase": "alternatives",
+            "research_digest": "6f8164f8f02c6f4978a0db21395014337a8903be76f8a8f77d7c20faef4d9ddd",
+            "to_phase": "synthesis",
+            "workflow_id": "fixture-workflow"
+          },
+          "type": "gated_action"
+        },
+        "action_digest": "c9e50bbf2ae05a4488f37068a6f53f70345aa348c0f5fe1815e988fa0e7305a8",
+        "decision_actor": "fixture-human",
+        "decision_operation_id": "fixture-phase-synthesis-decision",
+        "decision_rationale": "Simulated fixture decision only",
+        "execution_operation_id": "fixture-workflow-20",
+        "gate_id": "fixture-phase-synthesis",
+        "gate_type": "phase_transition",
+        "proposal_operation_id": "fixture-phase-synthesis-proposal",
+        "proposal_rationale": "Simulated fixture decision only",
+        "proposer": "fixture-human",
+        "status": "executed",
+        "target_digest": "c9e50bbf2ae05a4488f37068a6f53f70345aa348c0f5fe1815e988fa0e7305a8"
+      },
+      "fixture-transition": {
+        "action": {
+          "action": "phase_transition",
+          "payload": {
+            "fixture_only": true,
+            "from_phase": "fixture",
+            "to_phase": "fixture-reviewed"
+          },
+          "type": "gated_action"
+        },
+        "action_digest": "e8f34d73680dee4b1ba0b84cf88806fb46b9ad14f9ce64da6180a477658cf69e",
+        "decision_actor": "fixture-human",
+        "decision_operation_id": "fixture-decision",
+        "decision_rationale": "Simulated fixture decision only",
+        "execution_operation_id": "fixture-execution",
+        "gate_id": "fixture-transition",
+        "gate_type": "phase_transition",
+        "proposal_operation_id": "fixture-proposal",
+        "proposal_rationale": "Simulated fixture decision only",
+        "proposer": "fixture-human",
+        "status": "executed",
+        "target_digest": "e8f34d73680dee4b1ba0b84cf88806fb46b9ad14f9ce64da6180a477658cf69e"
+      },
+      "publication": {
+        "decision_required": "Approve publication",
+        "gate_id": "publication",
+        "gate_type": "publication",
+        "proposal": "Publish fixture example",
+        "rationale": "Explicit human review required",
+        "status": "pending_review"
+      }
+    },
+    "generated_at": "2026-10-22T08:16:19.490855+00:00",
+    "generated_by": "fixture-human",
+    "hypotheses": {},
+    "input_digest": "0d29aa13c7b532d24daed3bdd2f83ba2a751caf00283118c01383a61fa4b2468",
+    "limitations": [
+      "Draft interpretations and test outcomes are recorded assertions, not independent validation.",
+      "Synthetic evidence is a demonstration and cannot establish real-world findings.",
+      "No external publication is performed; approval identities depend on host authentication."
+    ],
+    "publication_authorized": false,
+    "questions": [
+      {
+        "question": "What does the fixture passage record?",
+        "question_id": "Q1"
+      },
+      {
+        "question": "Which interpretation remains uncertain?",
+        "question_id": "Q2"
+      }
+    ],
+    "report_id": "fixture-research-report",
+    "research_id": "offline-fixture-only",
+    "scope": {
+      "text": "Synthetic fixture only; no real participants or findings."
+    },
+    "stage_currency": {
+      "alternatives": true,
+      "definition": true,
+      "discovery": true,
+      "synthesis": true
+    },
+    "status": "draft",
+    "uncertainties": {
+      "fixture-uncertainty": {
+        "question": "Would any result transfer beyond this synthetic example?",
+        "status": "open",
+        "uncertainty_id": "fixture-uncertainty"
+      }
+    },
+    "workflow": {
+      "history": [
+        {
+          "from_phase": "brief",
+          "gate_id": "fixture-phase-discovery",
+          "operation_id": "fixture-workflow-8",
+          "to_phase": "discovery"
+        },
+        {
+          "from_phase": "discovery",
+          "gate_id": "fixture-phase-definition",
+          "operation_id": "fixture-workflow-12",
+          "to_phase": "definition"
+        },
+        {
+          "from_phase": "definition",
+          "gate_id": "fixture-phase-alternatives",
+          "operation_id": "fixture-workflow-16",
+          "to_phase": "alternatives"
+        },
+        {
+          "from_phase": "alternatives",
+          "gate_id": "fixture-phase-synthesis",
+          "operation_id": "fixture-workflow-20",
+          "to_phase": "synthesis"
+        }
+      ],
+      "max_alternatives": 2,
+      "phase": "synthesis",
+      "record_bindings": {
+        "alternatives": "d23c8688b6c4810f9f8dc8b04e13e607c0244e32657d5d11519da75cbcd1f200",
+        "definition": "d23c8688b6c4810f9f8dc8b04e13e607c0244e32657d5d11519da75cbcd1f200",
+        "discovery": "d23c8688b6c4810f9f8dc8b04e13e607c0244e32657d5d11519da75cbcd1f200",
+        "synthesis": "d23c8688b6c4810f9f8dc8b04e13e607c0244e32657d5d11519da75cbcd1f200"
+      },
+      "records": {
+        "alternatives": {
+          "alternatives": [
+            {
+              "alternative_id": "fixture-option-1",
+              "claim_ids": [
+                "fixture-claim"
+              ],
+              "evidence_ids": [
+                "synthetic-fixture-1"
+              ],
+              "hypothesis": "Option A could be context-specific.",
+              "limitations": "A synthetic fixture cannot validate either real-world interpretation.",
+              "outcome": "inconclusive",
+              "test": "Compare against the synthetic passage; no experiment was run."
+            },
+            {
+              "alternative_id": "fixture-option-2",
+              "claim_ids": [
+                "fixture-alternative"
+              ],
+              "evidence_ids": [
+                "synthetic-fixture-1"
+              ],
+              "hypothesis": "Other explanations remain possible.",
+              "limitations": "A synthetic fixture cannot validate either real-world interpretation.",
+              "outcome": "inconclusive",
+              "test": "Compare against the synthetic passage; no experiment was run."
+            }
+          ]
+        },
+        "definition": {
+          "claim_ids": [
+            "fixture-claim",
+            "fixture-alternative"
+          ],
+          "problem": "Interpret the bounded synthetic example without real-world generalisation.",
+          "uncertainty_ids": [
+            "fixture-uncertainty"
+          ]
+        },
+        "discovery": {
+          "evidence_ids": [
+            "synthetic-fixture-1"
+          ],
+          "notes": "Reviewed synthetic passage retained without source repair."
+        },
+        "synthesis": {
+          "claim_ids": [
+            "fixture-claim",
+            "fixture-alternative"
+          ],
+          "limitations": "No real participants, independent sources or live tests.",
+          "summary": "The synthetic passage demonstrates traceability; it establishes no real-world result."
+        }
+      },
+      "status": "stopped",
+      "stopping_reason": "The fixed fixture comparison is complete; transfer uncertainty remains open.",
+      "workflow_id": "fixture-workflow"
+    }
+  },
+  "current_at_export": true,
+  "export_state_revision": 24
+}

@@ -1,0 +1,20 @@
+{
+  "fixture_only": true,
+  "live_sources_used": false,
+  "identity": "simulated fixture callback",
+  "mvp_ready": false,
+  "checks": {
+    "all_gaps_planned": true,
+    "dependency_order_preserved": true,
+    "proposal_current": true,
+    "no_execution_authorized": true,
+    "experiment_requires_human_gate": true,
+    "synthetic_and_missing_evidence_distinct": true,
+    "basis_report_unchanged": true,
+    "existing_gates_unchanged": true,
+    "checkpoint_preserves_agenda": true
+  },
+  "limitations": [
+    "No actual participant contact, external retrieval, experiment or human approval was performed."
+  ]
+}

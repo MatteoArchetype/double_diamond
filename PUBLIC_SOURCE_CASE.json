@@ -1,0 +1,79 @@
+{
+  "packet_version": 1,
+  "case_id": "sqlite-power-loss-public-case",
+  "status": "pending_human_source_review",
+  "acquired_at": "2026-10-22T08:09:58.696573+00:00",
+  "question": "Does saving a SQLite transaction guarantee that it survives sudden power loss?",
+  "scope": "Bounded reading of two official documentation pages; distinguish atomic recovery from durability. No hardware, operating-system or deployment configuration tests.",
+  "documents": [
+    {
+      "source_id": "sqlite-official-1",
+      "title": "Atomic Commit In SQLite",
+      "publisher": "SQLite project",
+      "url": "https://www.sqlite.org/atomiccommit.html",
+      "retrieved_at": "2026-10-22T08:09:58.696573+00:00",
+      "published_at": null,
+      "passage": "the operating system that it is running on works as advertised.",
+      "content_location": "Section 2. Hardware Assumptions; OS correctness paragraph (web text line 138 at capture)",
+      "provenance": "official_documentation",
+      "synthetic": false,
+      "independence_cluster": "sqlite.org",
+      "metadata": {
+        "acquisition_method": "Official public page opened with web tool; agent-selected excerpt",
+        "snapshot_extent": "short excerpt only; reviewer must inspect page context",
+        "human_verified": false
+      }
+    },
+    {
+      "source_id": "sqlite-official-2",
+      "title": "How To Corrupt An SQLite Database File",
+      "publisher": "SQLite project",
+      "url": "https://www.sqlite.org/howtocorrupt.html",
+      "retrieved_at": "2026-10-22T08:09:58.696573+00:00",
+      "published_at": null,
+      "passage": "previously committed transactions to roll back",
+      "content_location": "Section 3. Failure to sync; I/O-barrier paragraph (web text line 170 at capture)",
+      "provenance": "official_documentation",
+      "synthetic": false,
+      "independence_cluster": "sqlite.org",
+      "metadata": {
+        "acquisition_method": "Official public page opened with web tool; agent-selected excerpt",
+        "snapshot_extent": "short excerpt only; reviewer must inspect page context",
+        "human_verified": false
+      }
+    }
+  ],
+  "source_snapshots": {
+    "sqlite-official-1": {
+      "text": "the operating system that it is running on works as advertised.",
+      "location": "Section 2. Hardware Assumptions; OS correctness paragraph (web text line 138 at capture)"
+    },
+    "sqlite-official-2": {
+      "text": "previously committed transactions to roll back",
+      "location": "Section 3. Failure to sync; I/O-barrier paragraph (web text line 170 at capture)"
+    }
+  },
+  "proposed_interpretation": "No unconditional guarantee follows from these pages. SQLite relies on the storage stack honoring its assumptions; losing committed work and database corruption are distinct outcomes.",
+  "alternatives": [
+    {
+      "id": "unconditional",
+      "hypothesis": "A successful save survives every power-loss situation.",
+      "proposed_outcome": "unsupported within the bounded documentation review"
+    },
+    {
+      "id": "conditional",
+      "hypothesis": "The outcome depends on storage and flush semantics.",
+      "proposed_outcome": "supported as a documentation interpretation, not a hardware measurement"
+    }
+  ],
+  "uncertainties": [
+    "The actual operating system, disk, journal mode and sync settings are untested.",
+    "Both pages share one publisher and one independence cluster.",
+    "Only short excerpts are retained; full context and independent acquisition need human verification."
+  ],
+  "human_source_review": "pending",
+  "human_transition_decisions": "pending",
+  "human_acceptance": "pending",
+  "independent_human_acquisition_confirmed": false,
+  "packet_digest": "68e5cbf288bf1ee3b39c9876b0f79fed58bf196711b4f894fd40e58b63fd2c84"
+}

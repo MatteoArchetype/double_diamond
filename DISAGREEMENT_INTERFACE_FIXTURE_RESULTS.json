@@ -1,0 +1,18 @@
+{
+  "cycle": 142,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_transaction_tests": 26,
+  "browser_checks": {
+    "two_interpretations_required": true,
+    "pair_not_preselected": true,
+    "same_interpretation_refused": true,
+    "valid_disagreement_unresolved": true,
+    "both_sides_and_synthetic_labels_visible": true,
+    "report_retains_both_sides": true,
+    "later_current_edit_not_substituted": true,
+    "historical_report_label_preserved": true,
+    "original_source_passage_and_locator_inspectable": true,
+    "healthcare_case_untouched": true
+  }
+}

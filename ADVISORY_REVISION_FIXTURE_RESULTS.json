@@ -1,0 +1,20 @@
+{
+  "cycle": 145,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_transaction_tests": 31,
+  "browser_checks": {
+    "protected_record_has_no_revision_control": true,
+    "cancellation_makes_no_write": true,
+    "drafts_isolated_from_new_claim_form": true,
+    "section_navigation_preserves_revision": true,
+    "stale_save_refused": true,
+    "unsaved_wording_retained_after_refusal": true,
+    "fresh_revision_stays_advisory": true,
+    "earlier_version_and_links_retained": true,
+    "original_frame_context_unchanged": true,
+    "report_snapshot_and_assessment_creation_freshness_unchanged": true,
+    "reload_preserves_saved_history": true,
+    "healthcare_case_untouched": true
+  }
+}

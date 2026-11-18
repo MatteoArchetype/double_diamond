@@ -1,0 +1,9 @@
+{
+  "cycle": 139,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_tests": 35,
+  "browser_round_trip": true,
+  "exact_state_and_revisions_preserved": true,
+  "healthcare_case_untouched": true
+}

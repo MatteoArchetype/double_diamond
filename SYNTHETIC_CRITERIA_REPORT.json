@@ -1,0 +1,674 @@
+{
+  "assessments": [],
+  "brief": {
+    "text": "Explore competing interpretations of the synthetic example"
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "epistemic_label": "advisory interpretation",
+      "evidence": [
+        {
+          "evidence": {
+            "evidence_id": "synthetic-example",
+            "exact_location": "fixture line 1",
+            "finding": "SYNTHETIC EXAMPLE: one observation does not explain every context.",
+            "independence_cluster": "fixture-only",
+            "metadata": {
+              "published_at": null,
+              "publisher": "Fixture generator",
+              "retrieved_at": "2026-10-22",
+              "title": "Synthetic example",
+              "url": "https://example.invalid/dd-fixture"
+            },
+            "provenance": "synthetic",
+            "source_id": "synthetic-example",
+            "synthetic": true
+          },
+          "evidence_id": "synthetic-example",
+          "source": null,
+          "synthetic": true
+        }
+      ],
+      "evidence_origin": "synthetic_only",
+      "interpretation": {
+        "analysis_status": "advisory",
+        "claim": "SYNTHETIC EXAMPLE: interpretation remains provisional.",
+        "claim_id": "C1",
+        "claim_type": "descriptive",
+        "disposition": "unresolved",
+        "evidence_ids": [
+          "synthetic-example"
+        ],
+        "evidence_origin": "synthetic_only",
+        "status": "draft"
+      }
+    }
+  ],
+  "content_digest": "f48d0a9de15443a650beba1af06a1cda2b1cc95b7c39dd9ef4117f8d472f8c95",
+  "contradictions": {},
+  "decision_trace": {
+    "all_criteria_met": false,
+    "criteria": [
+      {
+        "criterion": "Explain the observation within its context",
+        "criterion_index": 0,
+        "evaluation_ids": [
+          "E1"
+        ],
+        "evidence_ids": [
+          "synthetic-example"
+        ],
+        "evidence_origin": "synthetic_only",
+        "next_research": "Acquire an independently reviewed contextual observation",
+        "outcome": "unknown",
+        "rationale": "The synthetic comparison remains inconclusive"
+      },
+      {
+        "criterion": "Establish whether the explanation transfers",
+        "criterion_index": 1,
+        "evaluation_ids": [],
+        "evidence_ids": [],
+        "evidence_origin": "none",
+        "next_research": "Test the explanation in a different context",
+        "outcome": "unknown",
+        "rationale": "No transfer evidence has been gathered"
+      }
+    ],
+    "decision": "stop_unresolved",
+    "selected_alternative_id": "A0",
+    "verification": "host-recorded assessment; not independent experiment validation"
+  },
+  "evaluation_origins": {
+    "E1": "synthetic_only"
+  },
+  "gates": {
+    "fixture-gate-12": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "develop",
+          "reason": "Synthetic fixture progression",
+          "research_digest": "09e218ea7e20d73c2a9735941f3a4e388eeb4df05f42b0d6d2b56a71cb81fb95",
+          "to_phase": "deliver",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "92d8065baf3c52da7792ea6c6022f250193746064f144ed14a72a344e6ac5896",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-12-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-12",
+      "gate_id": "fixture-gate-12",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-12-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "92d8065baf3c52da7792ea6c6022f250193746064f144ed14a72a344e6ac5896"
+    },
+    "fixture-gate-18": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "deliver",
+          "reason": "Inconclusive evaluation requires a narrower problem frame",
+          "research_digest": "cc085928c8931adb7fe585a78c6b40420e50d7caea389520c3e638d24b823efa",
+          "to_phase": "define",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "20088e4dc8f80922e43505143e2cc90fc9d71b77cf00a553e76c09428a028020",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-18-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-18",
+      "gate_id": "fixture-gate-18",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-18-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "20088e4dc8f80922e43505143e2cc90fc9d71b77cf00a553e76c09428a028020"
+    },
+    "fixture-gate-24": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "define",
+          "reason": "Synthetic fixture progression",
+          "research_digest": "511138c0d11d14966c4c2297bff58ce933fbec1e40b1f20a1927bd49263b27fb",
+          "to_phase": "develop",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "d065126776306ad57de6dc0cf540bbe7c85a7c58b6b45df5ed752a25f1fce8f3",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-24-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-24",
+      "gate_id": "fixture-gate-24",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-24-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "d065126776306ad57de6dc0cf540bbe7c85a7c58b6b45df5ed752a25f1fce8f3"
+    },
+    "fixture-gate-28": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "develop",
+          "reason": "Synthetic fixture progression",
+          "research_digest": "2aa1b372d5f1a2c9b88c6ab3e16c515dd583b3d0774286c99d9bb44953d6ae14",
+          "to_phase": "deliver",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "2c27fcbc858d9e73690578dc487251a87f783f2ae37ae0057900a15c30dd566a",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-28-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-28",
+      "gate_id": "fixture-gate-28",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-28-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "2c27fcbc858d9e73690578dc487251a87f783f2ae37ae0057900a15c30dd566a"
+    },
+    "fixture-gate-4": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "discover",
+          "reason": "Synthetic fixture progression",
+          "research_digest": "90e8634a7d1b523ec8bd3d76464cbd39f618d8885e7b78f07a0e443502abf7b8",
+          "to_phase": "define",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "324974cb1b24a7b18f2685fabeab8eebb50634497b541945bad7e7a96a78208c",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-4-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-4",
+      "gate_id": "fixture-gate-4",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-4-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "324974cb1b24a7b18f2685fabeab8eebb50634497b541945bad7e7a96a78208c"
+    },
+    "fixture-gate-8": {
+      "action": {
+        "action": "phase_transition",
+        "payload": {
+          "from_phase": "define",
+          "reason": "Synthetic fixture progression",
+          "research_digest": "d55f2360ab1daad94ad3975a46c57e1b099e03ba8c321dfdc73718d89307afb1",
+          "to_phase": "develop",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "0cf1e08bd4ec8ae0255fabdcabfb7d9ce4f3b7f2bc8a2fb940515705665db3a5",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-gate-8-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-transition-8",
+      "gate_id": "fixture-gate-8",
+      "gate_type": "phase_transition",
+      "proposal_operation_id": "fixture-gate-8-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "0cf1e08bd4ec8ae0255fabdcabfb7d9ce4f3b7f2bc8a2fb940515705665db3a5"
+    },
+    "fixture-reframe": {
+      "action": {
+        "action": "material_reframing",
+        "payload": {
+          "record_digest": "206ebe0618501aa8034108fc224ea1cbdce9a2a63aca8629c4b3400ceac60499",
+          "research_digest": "a61c9df122b40b74ab1218dd429c2ad3598a3a3a1f889e3ccce724af016f0e87",
+          "visit_id": "V5",
+          "workflow_id": "DD-fixture"
+        },
+        "type": "gated_action"
+      },
+      "action_digest": "c9fcc004fb54cfd075f6f144577d744fc10c89edaa67e9094ca5b397dbd24a86",
+      "decision_actor": "fixture-actor",
+      "decision_operation_id": "fixture-reframe-decision",
+      "decision_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "execution_operation_id": "fixture-revised-define",
+      "gate_id": "fixture-reframe",
+      "gate_type": "material_reframing",
+      "proposal_operation_id": "fixture-reframe-proposal",
+      "proposal_rationale": "Synthetic fixture; simulated authorization, not actual human approval",
+      "proposer": "fixture-actor",
+      "status": "executed",
+      "target_digest": "c9fcc004fb54cfd075f6f144577d744fc10c89edaa67e9094ca5b397dbd24a86"
+    },
+    "publication": {
+      "decision_required": "Approve exact content",
+      "gate_id": "publication",
+      "gate_type": "publication",
+      "proposal": "Publish",
+      "rationale": "Human review required",
+      "status": "pending_review"
+    }
+  },
+  "generated_at": "2026-10-22T08:48:39.425634+00:00",
+  "generated_by": "fixture-actor",
+  "hypotheses": {},
+  "input_digest": "8d1e25a225815457bfb5ae3c6d449c35fd672b2ea566ebe4e892caef365e6954",
+  "limitations": [
+    "Draft interpretations and test outcomes are recorded assertions, not independent validation.",
+    "Synthetic evidence is a demonstration and cannot establish real-world findings.",
+    "No external publication is performed; approval identities depend on host authentication."
+  ],
+  "publication_authorized": false,
+  "questions": [
+    {
+      "question": "Which explanation is supported?",
+      "question_id": "Q1"
+    }
+  ],
+  "report_id": "after-iteration",
+  "research_id": "synthetic-double-diamond-learning-loop",
+  "research_scope_note": "Recorded research evaluations and recommendations; no automatic experiment validation or product delivery.",
+  "scope": {
+    "text": "Synthetic only; no real users, product delivery or experiment"
+  },
+  "stage_currency": {
+    "define": true,
+    "deliver": true,
+    "develop": true,
+    "discover": true
+  },
+  "status": "draft",
+  "uncertainties": {},
+  "workflow": {
+    "history": [
+      {
+        "from_phase": "discover",
+        "gate_id": "fixture-gate-4",
+        "kind": "advance",
+        "operation_id": "fixture-transition-4",
+        "reason": "Synthetic fixture progression",
+        "to_phase": "define"
+      },
+      {
+        "from_phase": "define",
+        "gate_id": "fixture-gate-8",
+        "kind": "advance",
+        "operation_id": "fixture-transition-8",
+        "reason": "Synthetic fixture progression",
+        "to_phase": "develop"
+      },
+      {
+        "from_phase": "develop",
+        "gate_id": "fixture-gate-12",
+        "kind": "advance",
+        "operation_id": "fixture-transition-12",
+        "reason": "Synthetic fixture progression",
+        "to_phase": "deliver"
+      },
+      {
+        "from_phase": "deliver",
+        "gate_id": "fixture-gate-18",
+        "kind": "reopen",
+        "operation_id": "fixture-transition-18",
+        "reason": "Inconclusive evaluation requires a narrower problem frame",
+        "to_phase": "define"
+      },
+      {
+        "from_phase": "define",
+        "gate_id": "fixture-gate-24",
+        "kind": "advance",
+        "operation_id": "fixture-transition-24",
+        "reason": "Synthetic fixture progression",
+        "to_phase": "develop"
+      },
+      {
+        "from_phase": "develop",
+        "gate_id": "fixture-gate-28",
+        "kind": "advance",
+        "operation_id": "fixture-transition-28",
+        "reason": "Synthetic fixture progression",
+        "to_phase": "deliver"
+      }
+    ],
+    "max_alternatives": 2,
+    "max_visits": 8,
+    "methodology": "double_diamond",
+    "phase": "deliver",
+    "record_bindings": {
+      "define": "3b6b2e576ad6366e0094fda90ffb1edeeba7efec477a57aec9d26c95c7858aa8",
+      "deliver": "cef32b60af6ea90c8acac713671330f3df28d8f97f8f67a3a8b9365a15d73c9e",
+      "develop": "d105503468bb5d0ef6f2821e89fdf715f1ae072de5bd893824119a0cc732215a",
+      "discover": "1e707f17a352383ab253ae4e3e7840c6106ad9723006c8d3592a0e105fecbc0f"
+    },
+    "records": {
+      "define": {
+        "claim_ids": [
+          "C1"
+        ],
+        "problem": "Identify what remains unknown about the example",
+        "success_criteria": [
+          "Explain the observation within its context",
+          "Establish whether the explanation transfers"
+        ],
+        "uncertainty_ids": []
+      },
+      "deliver": {
+        "claim_ids": [
+          "C1"
+        ],
+        "criterion_assessments": [
+          {
+            "criterion_index": 0,
+            "evaluation_ids": [
+              "E1"
+            ],
+            "next_research": "Acquire an independently reviewed contextual observation",
+            "outcome": "unknown",
+            "rationale": "The synthetic comparison remains inconclusive"
+          },
+          {
+            "criterion_index": 1,
+            "evaluation_ids": [],
+            "next_research": "Test the explanation in a different context",
+            "outcome": "unknown",
+            "rationale": "No transfer evidence has been gathered"
+          }
+        ],
+        "decision": "stop_unresolved",
+        "evaluations": [
+          {
+            "alternative_id": "A0",
+            "evaluation_id": "E1",
+            "evidence_ids": [
+              "synthetic-example"
+            ],
+            "limitations": "Synthetic only",
+            "method": "Synthetic passage comparison; no experiment",
+            "outcome": "inconclusive"
+          }
+        ],
+        "limitations": "No real-world conclusion",
+        "selected_alternative_id": "A0",
+        "summary": "Stop with uncertainty; the synthetic material supports no real-world answer"
+      },
+      "develop": {
+        "alternatives": [
+          {
+            "alternative_id": "A0",
+            "claim_ids": [
+              "C1"
+            ],
+            "evidence_ids": [
+              "synthetic-example"
+            ],
+            "hypothesis": "Synthetic explanation 0",
+            "limitations": "Synthetic only",
+            "test": "Compare the explanation with the fixture observation"
+          },
+          {
+            "alternative_id": "A1",
+            "claim_ids": [
+              "C1"
+            ],
+            "evidence_ids": [
+              "synthetic-example"
+            ],
+            "hypothesis": "Synthetic explanation 1",
+            "limitations": "Synthetic only",
+            "test": "Compare the explanation with the fixture observation"
+          }
+        ]
+      },
+      "discover": {
+        "evidence_ids": [
+          "synthetic-example"
+        ],
+        "limitations": "No user engagement; one synthetic example",
+        "notes": "Explore evidence and missing perspectives",
+        "perspectives": [
+          "Fixture observation",
+          "Affected users: not studied"
+        ]
+      }
+    },
+    "status": "stopped",
+    "stopping_reason": "The bounded synthetic comparison is complete; uncertainty remains explicit",
+    "visits": [
+      {
+        "binding": "1e707f17a352383ab253ae4e3e7840c6106ad9723006c8d3592a0e105fecbc0f",
+        "phase": "discover",
+        "reason": "Initial discovery",
+        "record": {
+          "evidence_ids": [
+            "synthetic-example"
+          ],
+          "limitations": "No user engagement; one synthetic example",
+          "notes": "Explore evidence and missing perspectives",
+          "perspectives": [
+            "Fixture observation",
+            "Affected users: not studied"
+          ]
+        },
+        "record_operation_id": "fixture-record-discover",
+        "visit_id": "V1"
+      },
+      {
+        "binding": "21fa54e005b8f7b26ccb94029b6268341b85fb23d2e6663745ef6b882b2398cb",
+        "phase": "define",
+        "reason": "Synthetic fixture progression",
+        "record": {
+          "claim_ids": [
+            "C1"
+          ],
+          "problem": "Explain the example",
+          "success_criteria": [
+            "Explain the observation within its context",
+            "Establish whether the explanation transfers"
+          ],
+          "uncertainty_ids": []
+        },
+        "record_operation_id": "fixture-record-define",
+        "visit_id": "V2"
+      },
+      {
+        "binding": "d105503468bb5d0ef6f2821e89fdf715f1ae072de5bd893824119a0cc732215a",
+        "phase": "develop",
+        "reason": "Synthetic fixture progression",
+        "record": {
+          "alternatives": [
+            {
+              "alternative_id": "A0",
+              "claim_ids": [
+                "C1"
+              ],
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "hypothesis": "Synthetic explanation 0",
+              "limitations": "Synthetic only",
+              "test": "Compare the explanation with the fixture observation"
+            },
+            {
+              "alternative_id": "A1",
+              "claim_ids": [
+                "C1"
+              ],
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "hypothesis": "Synthetic explanation 1",
+              "limitations": "Synthetic only",
+              "test": "Compare the explanation with the fixture observation"
+            }
+          ]
+        },
+        "record_operation_id": "fixture-record-develop",
+        "visit_id": "V3"
+      },
+      {
+        "binding": "46359def4f7b9af81fec89c7a277c2245adca2b8f73fa90c132b241f6ff6a0c8",
+        "phase": "deliver",
+        "reason": "Synthetic fixture progression",
+        "record": {
+          "claim_ids": [
+            "C1"
+          ],
+          "criterion_assessments": [
+            {
+              "criterion_index": 0,
+              "evaluation_ids": [
+                "E1"
+              ],
+              "next_research": "Acquire an independently reviewed contextual observation",
+              "outcome": "unknown",
+              "rationale": "The synthetic comparison remains inconclusive"
+            },
+            {
+              "criterion_index": 1,
+              "evaluation_ids": [],
+              "next_research": "Test the explanation in a different context",
+              "outcome": "unknown",
+              "rationale": "No transfer evidence has been gathered"
+            }
+          ],
+          "decision": "revise",
+          "evaluations": [
+            {
+              "alternative_id": "A0",
+              "evaluation_id": "E1",
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "limitations": "Synthetic only",
+              "method": "Synthetic passage comparison; no experiment",
+              "outcome": "inconclusive"
+            }
+          ],
+          "limitations": "No real-world conclusion",
+          "selected_alternative_id": "A0",
+          "summary": "The comparison is inconclusive; return to framing"
+        },
+        "record_operation_id": "fixture-first-evaluation",
+        "visit_id": "V4"
+      },
+      {
+        "binding": "3b6b2e576ad6366e0094fda90ffb1edeeba7efec477a57aec9d26c95c7858aa8",
+        "phase": "define",
+        "reason": "Inconclusive evaluation requires a narrower problem frame",
+        "record": {
+          "claim_ids": [
+            "C1"
+          ],
+          "problem": "Identify what remains unknown about the example",
+          "success_criteria": [
+            "Explain the observation within its context",
+            "Establish whether the explanation transfers"
+          ],
+          "uncertainty_ids": []
+        },
+        "record_operation_id": "fixture-revised-define",
+        "visit_id": "V5"
+      },
+      {
+        "binding": "d105503468bb5d0ef6f2821e89fdf715f1ae072de5bd893824119a0cc732215a",
+        "phase": "develop",
+        "reason": "Synthetic fixture progression",
+        "record": {
+          "alternatives": [
+            {
+              "alternative_id": "A0",
+              "claim_ids": [
+                "C1"
+              ],
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "hypothesis": "Synthetic explanation 0",
+              "limitations": "Synthetic only",
+              "test": "Compare the explanation with the fixture observation"
+            },
+            {
+              "alternative_id": "A1",
+              "claim_ids": [
+                "C1"
+              ],
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "hypothesis": "Synthetic explanation 1",
+              "limitations": "Synthetic only",
+              "test": "Compare the explanation with the fixture observation"
+            }
+          ]
+        },
+        "record_operation_id": "fixture-revised-alternatives",
+        "visit_id": "V6"
+      },
+      {
+        "binding": "cef32b60af6ea90c8acac713671330f3df28d8f97f8f67a3a8b9365a15d73c9e",
+        "phase": "deliver",
+        "reason": "Synthetic fixture progression",
+        "record": {
+          "claim_ids": [
+            "C1"
+          ],
+          "criterion_assessments": [
+            {
+              "criterion_index": 0,
+              "evaluation_ids": [
+                "E1"
+              ],
+              "next_research": "Acquire an independently reviewed contextual observation",
+              "outcome": "unknown",
+              "rationale": "The synthetic comparison remains inconclusive"
+            },
+            {
+              "criterion_index": 1,
+              "evaluation_ids": [],
+              "next_research": "Test the explanation in a different context",
+              "outcome": "unknown",
+              "rationale": "No transfer evidence has been gathered"
+            }
+          ],
+          "decision": "stop_unresolved",
+          "evaluations": [
+            {
+              "alternative_id": "A0",
+              "evaluation_id": "E1",
+              "evidence_ids": [
+                "synthetic-example"
+              ],
+              "limitations": "Synthetic only",
+              "method": "Synthetic passage comparison; no experiment",
+              "outcome": "inconclusive"
+            }
+          ],
+          "limitations": "No real-world conclusion",
+          "selected_alternative_id": "A0",
+          "summary": "Stop with uncertainty; the synthetic material supports no real-world answer"
+        },
+        "record_operation_id": "fixture-final-evaluation",
+        "visit_id": "V7"
+      }
+    ],
+    "workflow_id": "DD-fixture",
+    "workflow_version": 3
+  }
+}

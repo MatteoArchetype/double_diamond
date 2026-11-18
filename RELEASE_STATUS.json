@@ -1,0 +1,9 @@
+{
+  "cycle": 183,
+  "mvp_ready": false,
+  "release_state": "source_review_aids_and_phase_handoff",
+  "limitations": [
+    "Source group suggestions use matching publisher text and recorded groups, without inferring independence.",
+    "Source passage, location, context and approval still require explicit review."
+  ]
+}

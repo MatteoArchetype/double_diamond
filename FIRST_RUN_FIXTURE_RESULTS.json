@@ -1,0 +1,20 @@
+{
+  "fixture_only": true,
+  "mvp_ready": false,
+  "live_sources_used": false,
+  "checks": {
+    "browser_example_saved": true,
+    "all_example_evidence_synthetic": true,
+    "current_report_first": true,
+    "historical_report_retained": true,
+    "report_navigation_only": true,
+    "empty_case_no_evidence": true,
+    "empty_case_no_gates": true,
+    "empty_case_stays_discover": true,
+    "source_review_navigation": true,
+    "original_example_remains_separate": true
+  },
+  "limitations": [
+    "Synthetic learning example and empty interface-only cases. Browser navigation did not approve source intake or research."
+  ]
+}

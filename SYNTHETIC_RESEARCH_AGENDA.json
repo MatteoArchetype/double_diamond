@@ -1,0 +1,74 @@
+{
+  "actor": "fixture-planner",
+  "agenda_id": "follow-up-agenda",
+  "context_digest": "ae3280be25f1327d272badf58a566faf4b476cf7a8bf0e0cc6a13e3b814558f2",
+  "execution_authorized": false,
+  "items": [
+    {
+      "criterion": "Explain the observation within its context",
+      "criterion_index": 0,
+      "criterion_outcome": "unknown",
+      "depends_on": [],
+      "effort": "small",
+      "evidence_gap": "Only synthetic context evidence exists",
+      "evidence_ids": [
+        "synthetic-example"
+      ],
+      "evidence_origin": "synthetic_only",
+      "execution_authorized": false,
+      "item_id": "context-observation",
+      "method": "desk_review",
+      "priority": "high",
+      "priority_rationale": "Ground the explanation before testing transfer",
+      "question": "Does an independently reviewed contextual observation support this explanation?",
+      "recorded_next_research": "Acquire an independently reviewed contextual observation",
+      "required_gate_types": [],
+      "status": "proposed",
+      "success_signal": "A reviewed non-synthetic observation addresses the explanation in its context",
+      "target_phase": "discover"
+    },
+    {
+      "criterion": "Establish whether the explanation transfers",
+      "criterion_index": 1,
+      "criterion_outcome": "unknown",
+      "depends_on": [
+        "context-observation"
+      ],
+      "effort": "medium",
+      "evidence_gap": "No transfer observation or test exists",
+      "evidence_ids": [],
+      "evidence_origin": "none",
+      "execution_authorized": false,
+      "item_id": "transfer-test",
+      "method": "experiment",
+      "priority": "high",
+      "priority_rationale": "The transfer criterion cannot be judged from one context",
+      "question": "Does the explanation hold in a second context?",
+      "recorded_next_research": "Test the explanation in a different context",
+      "required_gate_types": [
+        "primary_research"
+      ],
+      "status": "proposed",
+      "success_signal": "A separately authorized bounded test provides evidence about transfer",
+      "target_phase": "develop"
+    }
+  ],
+  "limitations": [
+    "Priorities and methods are recorded planning judgments, not validated study designs.",
+    "Gate hints do not grant authorization. Human review and exact action approval remain required.",
+    "No participant contact, external retrieval or experiment is performed by planning."
+  ],
+  "operation_id": "fixture-agenda",
+  "proposed_order": [
+    "context-observation",
+    "transfer-test"
+  ],
+  "rationale": "Synthetic proposed planning only",
+  "report_digest": "20a2c3b704471bcc70a5d3e5194b4a399619e1862ca35c2049d2099adb37ce9d",
+  "report_id": "after-iteration",
+  "status": "proposed",
+  "timestamp": "2026-10-22T12:21:34.324092+00:00",
+  "basis_report_current": true,
+  "current": true,
+  "state_revision": 35
+}

@@ -1,0 +1,19 @@
+{
+  "fixture_only": true,
+  "live_sources_used": false,
+  "mvp_ready": false,
+  "checks": {
+    "original_context_verified": true,
+    "original_frame_preserved": true,
+    "revised_frame_inspectable": true,
+    "exact_comparison": true,
+    "old_visit_not_current": true,
+    "synthetic_passage_retained": true,
+    "criterion_context_from_original_snapshot": true,
+    "original_evaluation_visible": true,
+    "read_only_bytes_preserved": true
+  },
+  "limitations": [
+    "All evidence and approvals are synthetic/simulated. Inspection is not an approval or independent identity/source verification."
+  ]
+}

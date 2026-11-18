@@ -1,0 +1,190 @@
+{
+  "fixture_only": true,
+  "live_sources_used": false,
+  "reviewer_identity": "simulated fixture callback",
+  "analysis_actor_identity": "simulated fixture callback",
+  "checks": {
+    "review_before_ingest": true,
+    "review_handoff_reopens": true,
+    "host_authorization_callback_required": true,
+    "retry_is_idempotent": true,
+    "analysis_changes_persist": true,
+    "analysis_remains_advisory": true,
+    "analysis_assessment_is_current": true,
+    "analysis_audit_reopens": true,
+    "gate_authorization_required": true,
+    "durable_gate_decision": true,
+    "gate_retry_is_idempotent": true,
+    "bounded_workflow_persists": true,
+    "workflow_human_pauses_preserved": true,
+    "traceable_draft_report": true,
+    "report_preserves_synthetic_and_uncertainty": true,
+    "saved_report_is_current": true,
+    "synthetic_fixture_cannot_satisfy_host_acceptance": true,
+    "synthetic_label_preserved": true,
+    "review_and_snapshots_retained": true,
+    "unapproved_gate_blocks_publication": true,
+    "wrong_type_gate_blocks_publication": true,
+    "checkpoint_restores_state": true,
+    "double_diamond_iteration_fixture": true,
+    "double_diamond_deliver_evaluation": true,
+    "criteria_linked_research_decision": true,
+    "unmet_criteria_have_next_research": true,
+    "all_fixture_invariants": true
+  },
+  "observations": {
+    "detached_claim_is_not_persisted": true,
+    "detached_gate_approval_is_not_persisted": true
+  },
+  "mvp_ready": false,
+  "criteria": [
+    {
+      "id": "MVP-01",
+      "title": "Reviewed evidence intake",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "review_before_ingest",
+        "host_authorization_callback_required",
+        "synthetic_label_preserved",
+        "review_and_snapshots_retained"
+      ],
+      "acceptance": "Controller candidate is saved, explicitly reviewed and atomically ingested; source passages and synthetic labels remain traceable."
+    },
+    {
+      "id": "MVP-02",
+      "title": "Durable analysis",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "analysis_changes_persist",
+        "analysis_remains_advisory",
+        "analysis_audit_reopens",
+        "analysis_assessment_is_current"
+      ],
+      "acceptance": "Claims, evidence assessments, contradictions, uncertainty and disposition changes persist through authenticated revision-checked transactions, restart and checkpoint restore."
+    },
+    {
+      "id": "MVP-03",
+      "title": "Durable human decisions",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "gate_authorization_required",
+        "durable_gate_decision",
+        "gate_retry_is_idempotent",
+        "unapproved_gate_blocks_publication",
+        "wrong_type_gate_blocks_publication"
+      ],
+      "acceptance": "Gate proposals and authenticated approve/reject decisions are durable, audited and scoped to the intended action; pending or wrong-type gates block progression."
+    },
+    {
+      "id": "MVP-04",
+      "title": "Double Diamond research workflow with bounded iteration",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "bounded_workflow_persists",
+        "workflow_human_pauses_preserved",
+        "double_diamond_iteration_fixture",
+        "double_diamond_deliver_evaluation",
+        "criteria_linked_research_decision",
+        "unmet_criteria_have_next_research"
+      ],
+      "acceptance": "Run Discover, Define, Develop and Deliver as explicit research phases; preserve earlier findings when revisiting phases, gate reframing, and record selected-alternative evaluations with recommend/revise/stop outcomes."
+    },
+    {
+      "id": "MVP-05",
+      "title": "Traceable research report",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "traceable_draft_report",
+        "report_preserves_synthetic_and_uncertainty",
+        "saved_report_is_current"
+      ],
+      "acceptance": "A readable report distinguishes evidence, interpretations, hypotheses, uncertainty and synthetic examples, with claim-to-source passages/locations and approval/publication status."
+    },
+    {
+      "id": "MVP-06",
+      "title": "Recovery and backup",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "review_handoff_reopens",
+        "retry_is_idempotent",
+        "checkpoint_restores_state",
+        "unapproved_gate_blocks_publication"
+      ],
+      "acceptance": "Saved handoff, approved evidence and checkpoint data reopen without duplicate ingestion; unapproved gates remain blocked."
+    },
+    {
+      "id": "MVP-07",
+      "title": "Runnable local fixture",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "all_fixture_invariants"
+      ],
+      "acceptance": "A self-contained offline demo can be run from a clean package, labels all material synthetic, and does not claim a finished research result or real reviewer authentication."
+    },
+    {
+      "id": "MVP-08",
+      "title": "Host-checked acceptance case",
+      "status": "manual_acceptance_pending",
+      "required": true,
+      "fixture_checks": [],
+      "acceptance": "After full integration, run a bounded case with independently acquired real-source snapshots and an authenticated human review; record limitations and user/host acceptance without replacing this with fixture approval."
+    }
+  ],
+  "work_plan": [
+    {
+      "target_cycle": 131,
+      "title": "Acceptance case and release package",
+      "criteria": [
+        "MVP-08"
+      ],
+      "depends_on": [
+        "MVP-04",
+        "MVP-05"
+      ],
+      "deliverable": "Full end-to-end fixture plus host-checked bounded source case, reproducible guide, regression/package verification and explicit remaining limitations."
+    }
+  ],
+  "estimate": "Cycle 134 connects unresolved research decisions to proposed follow-up research. Completion timing is not guaranteed; actual human acceptance, real research inputs and product usability remain open.",
+  "checkpoint_summary": {
+    "state_revision": 24,
+    "ledger_revision": 1,
+    "operations": 1,
+    "review_coverage": {
+      "legacy_operations": 0,
+      "retained_reviews": 1,
+      "legacy_state_revision": 0
+    },
+    "retained_snapshot_sets": 1,
+    "candidate_statuses": {
+      "committed": 1
+    },
+    "tables": [
+      "candidate_renewals",
+      "ingestion_operations",
+      "ingestion_review_archive",
+      "pending_retrievals",
+      "receipts",
+      "research_state",
+      "retrieval_terminations",
+      "review_archive_policy",
+      "state_journal_policy",
+      "state_mutations"
+    ],
+    "state_mutations": {
+      "adoption_revision": 0,
+      "ingestion_mutations": 1,
+      "analysis_mutations": 1,
+      "journal_entries": 24,
+      "gate_mutations": 11,
+      "workflow_mutations": 11
+    }
+  },
+  "research_report_digest": "e8b3e89b64378894b75d013a271a1988aa817933ecbc264dca19844ce8b121b8"
+}

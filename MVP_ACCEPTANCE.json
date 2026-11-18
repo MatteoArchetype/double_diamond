@@ -1,0 +1,185 @@
+{
+  "contract_version": 1,
+  "cycle": 154,
+  "scope": "Local Double Diamond research tool with a first single-operator browser interface and Python APIs: evidence-backed Discover/Define/Develop/Deliver, bounded iteration and explicit human decisions. No built-in independent identity/source provider or external execution.",
+  "completion_rule": "All eight required criteria must be satisfied; fixture checks alone cannot satisfy the host-checked acceptance case. Full regression and packaged-source verification must also pass.",
+  "criteria": [
+    {
+      "id": "MVP-01",
+      "title": "Reviewed evidence intake",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "review_before_ingest",
+        "host_authorization_callback_required",
+        "synthetic_label_preserved",
+        "review_and_snapshots_retained"
+      ],
+      "acceptance": "Controller candidate is saved, explicitly reviewed and atomically ingested; source passages and synthetic labels remain traceable."
+    },
+    {
+      "id": "MVP-02",
+      "title": "Durable analysis",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "analysis_changes_persist",
+        "analysis_remains_advisory",
+        "analysis_audit_reopens",
+        "analysis_assessment_is_current"
+      ],
+      "acceptance": "Claims, evidence assessments, contradictions, uncertainty and disposition changes persist through authenticated revision-checked transactions, restart and checkpoint restore."
+    },
+    {
+      "id": "MVP-03",
+      "title": "Durable human decisions",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "gate_authorization_required",
+        "durable_gate_decision",
+        "gate_retry_is_idempotent",
+        "unapproved_gate_blocks_publication",
+        "wrong_type_gate_blocks_publication"
+      ],
+      "acceptance": "Gate proposals and authenticated approve/reject decisions are durable, audited and scoped to the intended action; pending or wrong-type gates block progression."
+    },
+    {
+      "id": "MVP-04",
+      "title": "Double Diamond research workflow with bounded iteration",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "bounded_workflow_persists",
+        "workflow_human_pauses_preserved",
+        "double_diamond_iteration_fixture",
+        "double_diamond_deliver_evaluation",
+        "criteria_linked_research_decision",
+        "unmet_criteria_have_next_research"
+      ],
+      "acceptance": "Run Discover, Define, Develop and Deliver as explicit research phases; preserve earlier findings when revisiting phases, gate reframing, and record selected-alternative evaluations with recommend/revise/stop outcomes."
+    },
+    {
+      "id": "MVP-05",
+      "title": "Traceable research report",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "traceable_draft_report",
+        "report_preserves_synthetic_and_uncertainty",
+        "saved_report_is_current"
+      ],
+      "acceptance": "A readable report distinguishes evidence, interpretations, hypotheses, uncertainty and synthetic examples, with claim-to-source passages/locations and approval/publication status."
+    },
+    {
+      "id": "MVP-06",
+      "title": "Recovery and backup",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "review_handoff_reopens",
+        "retry_is_idempotent",
+        "checkpoint_restores_state",
+        "unapproved_gate_blocks_publication"
+      ],
+      "acceptance": "Saved handoff, approved evidence and checkpoint data reopen without duplicate ingestion; unapproved gates remain blocked."
+    },
+    {
+      "id": "MVP-07",
+      "title": "Runnable local fixture",
+      "status": "fixture_verified",
+      "required": true,
+      "fixture_checks": [
+        "all_fixture_invariants"
+      ],
+      "acceptance": "A self-contained offline demo can be run from a clean package, labels all material synthetic, and does not claim a finished research result or real reviewer authentication."
+    },
+    {
+      "id": "MVP-08",
+      "title": "Host-checked acceptance case",
+      "status": "manual_acceptance_pending",
+      "required": true,
+      "fixture_checks": [],
+      "acceptance": "After full integration, run a bounded case with independently acquired real-source snapshots and an authenticated human review; record limitations and user/host acceptance without replacing this with fixture approval."
+    }
+  ],
+  "work_plan": [
+    {
+      "target_cycle": 131,
+      "title": "Acceptance case and release package",
+      "criteria": [
+        "MVP-08"
+      ],
+      "depends_on": [
+        "MVP-04",
+        "MVP-05"
+      ],
+      "deliverable": "Full end-to-end fixture plus host-checked bounded source case, reproducible guide, regression/package verification and explicit remaining limitations."
+    }
+  ],
+  "estimate": "Cycle 145 adds bounded advisory draft interpretation revisions with preserved history and stale-context review. Actual research and host acceptance remain pending. Completion timing is not guaranteed.",
+  "deferred": [
+    "Graphical UI",
+    "Hosted multi-user service",
+    "Built-in external identity provider",
+    "Automatic live retrieval integrations",
+    "Exactly-once external executor actions",
+    "Remote/scheduled backups",
+    "Cryptographic external audit anchoring",
+    "General performance/scaling work"
+  ],
+  "change_rule": "Do not expand this MVP for optional enhancements. Add work only for a required acceptance criterion, a defect blocking it, or an explicit user scope change.",
+  "completed_cycles": [
+    {
+      "cycle": 128,
+      "criteria": [
+        "MVP-02"
+      ],
+      "deliverable": "Typed advisory analysis transactions, locally anchored replay journal, compatibility migration and checkpoint verification."
+    },
+    {
+      "cycle": 129,
+      "criteria": [
+        "MVP-03"
+      ],
+      "deliverable": "Durable host-authorized proposals and approve/reject decisions, exact action/version binding and atomic local consumption."
+    },
+    {
+      "cycle": 130,
+      "criteria": [
+        "MVP-04",
+        "MVP-05"
+      ],
+      "deliverable": "Bounded durable brief-to-synthesis workflow, action-bound human transitions, stop/escalate and source-traceable draft report exports."
+    },
+    {
+      "cycle": 131,
+      "criteria": [],
+      "deliverable": "Report-bound host acceptance API, real-source snapshot attestations, explicit fixture separation and public-source review packet. MVP-08 remains pending."
+    },
+    {
+      "cycle": 132,
+      "criteria": [
+        "MVP-04"
+      ],
+      "deliverable": "Explicit research phases, immutable phase visits, bounded iteration/reopen, exact reframing approval and selected-alternative evaluations. Existing cases preserved."
+    },
+    {
+      "cycle": 133,
+      "criteria": [
+        "MVP-04",
+        "MVP-05"
+      ],
+      "deliverable": "Criterion-linked research decisions, evidence trace and explicit next research for unmet criteria, with versioned compatibility."
+    },
+    {
+      "cycle": 134,
+      "criteria": [
+        "MVP-04"
+      ],
+      "deliverable": "Immutable proposed research agendas from unmet criteria, evidence-gap lineage, priorities, dependencies and explicit separation from action authorization."
+    }
+  ],
+  "release_state": "double_diamond_iteration_fixture_verified_human_acceptance_pending",
+  "methodology_scope": "Version 3 links Deliver assessments to Define success criteria, selected-alternative evaluations and evidence; gaps identify next research. Version 2 bounded iteration and earlier cases remain supported without silent migration. Research validity still requires human judgment."
+}

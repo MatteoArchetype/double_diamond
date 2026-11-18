@@ -1,0 +1,19 @@
+{
+  "cycle": 143,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_transaction_tests": 29,
+  "browser_checks": {
+    "linked_pair_required": true,
+    "unlinked_passage_not_offered": true,
+    "pair_selection_empty_by_default": true,
+    "twelve_ratings_unknown_by_default": true,
+    "draft_pair_ratings_and_preview_survive_navigation": true,
+    "qualitative_values_and_limits_saved": true,
+    "assessment_remains_advisory": true,
+    "changed_claim_stales_old_assessment": true,
+    "report_creation_freshness_retained": true,
+    "report_original_text_not_replaced": true,
+    "healthcare_case_untouched": true
+  }
+}

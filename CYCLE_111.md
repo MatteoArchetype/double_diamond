@@ -1,0 +1,3 @@
+# Cycle 111 — retrieval validation boundary
+
+Adds `dd_research_runtime/retrieval_validation.py` to structurally validate executor-provided retrieval records. Only completed `retrieve` actions are eligible. All documents must validate, source IDs must be unique, and the batch is rejected on any error. A successful check returns `ready_for_review`, **not** verified evidence. State remains unchanged until a separate explicit `ingest_reviewed_retrieval(..., approved=True)` call. This approval is an application-level flag, not an authenticated human authorization mechanism. Source authenticity, exact-passage fidelity and evidence relevance still require independent review. No live retrieval or autonomous evidence promotion.

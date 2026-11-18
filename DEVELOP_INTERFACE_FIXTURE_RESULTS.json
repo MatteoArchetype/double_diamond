@@ -1,0 +1,19 @@
+{
+  "cycle": 144,
+  "fixture_only": true,
+  "mvp_ready": false,
+  "new_transaction_tests": 17,
+  "browser_checks": {
+    "per_row_choices_default_empty": true,
+    "rows_keep_distinct_claims_and_passages": true,
+    "new_row_inherits_no_links": true,
+    "case_alternative_budget_enforced": true,
+    "minimum_two_rows_enforced": true,
+    "removed_and_readded_row_starts_blank": true,
+    "section_navigation_preserves_distinct_drafts": true,
+    "invalid_save_preserves_draft_and_names_missing_row": true,
+    "saved_original_visit_shows_each_basis": true,
+    "reload_preserves_saved_links": true,
+    "healthcare_case_untouched": true
+  }
+}
