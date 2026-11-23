@@ -98,3 +98,7 @@ Use the same Python environment to install the test requirements and run the sui
 .venv/bin/python -m pip install -r requirements-test.txt
 .venv/bin/python run_tests.py
 ```
+
+## Licence
+
+Copyright (c) 2026 Matteo. All rights reserved. The source is visible for reference only; see [LICENSE](LICENSE).
