@@ -1,13 +1,70 @@
 # Double Diamond Research Runtime
 
-Double Diamond is a local research workspace. Create a case around your own question, collect and review evidence, and work through Discover, Define, Develop, and Deliver. You decide when to approve evidence and move between phases.
+Double Diamond is a local research workspace for turning an open question into a traceable research decision.
+
+It is designed for questions such as:
+
+- How might AI change the work of middle-management insurance workers?
+- How might healthcare change as a result of AI?
+- What would make a school playground more usable during hot weather?
+
+Start with a question, collect source material, retain the passages that matter, record what those passages support and where uncertainty remains. The workspace guides the research through the Double Diamond method and keeps the evidence, interpretations, decisions, and limits connected.
+
+## What you can do
+
+- Create a research case around any question.
+- Search registered research publications through Crossref.
+- Add sources you already know about and keep a shortlist for later review.
+- Upload and retain research files locally, including PDFs, Word documents, text, Markdown, transcripts, video, and audio.
+- Review a passage or short excerpt with its original location and surrounding context before using it as evidence.
+- Mark invented material as synthetic so it cannot be confused with real-world evidence.
+- Work through Discover, Define, Develop, and Deliver with explicit reviews between meaningful changes.
+- Compare interpretations and alternatives rather than jumping from one source to a conclusion.
+- Produce a readable report that retains evidence links, limitations, unknowns, and the next research questions.
+
+## How the workflow fits together
+
+| Phase | What you do | What you save |
+| --- | --- | --- |
+| **Discover** | Explore sources, perspectives, and gaps in what you know. | Reviewed evidence and observations. |
+| **Define** | Decide which problem is worth addressing and what success would look like. | A bounded problem frame, linked interpretations, uncertainties, and criteria. |
+| **Develop** | Compare possible explanations, responses, or directions. | Competing alternatives, proposed tests, assumptions, and limitations. |
+| **Deliver** | Evaluate the available evidence against the criteria you defined. | An evaluation, decision, unresolved criteria, and next research where needed. |
+
+The workspace does not silently approve sources, move a case between phases, or turn an interpretation into a confirmed result. You review evidence and explicitly decide when the research is ready to progress.
+
+## First time using it
+
+1. Launch the workspace using the instructions below.
+2. Choose **Start a research case** and enter the question you want to explore.
+3. In **Discover**, select **Find and review sources**.
+4. Search Crossref, add a source link, or upload a research file.
+5. Save a passage from the source with its page number, section, paragraph, or recording timestamp. Check the surrounding context before approving it.
+6. Return to the Research tab to record what the evidence suggests and what you still need to learn.
+
+Choose **Create practice case** on the home screen to inspect a completed example with clearly labelled invented evidence and simulated decisions.
+
+## Source material and evidence
+
+The app keeps a distinction between a source you may want to use and evidence that you have reviewed.
+
+| Step | Meaning |
+| --- | --- |
+| **Find or save a source** | You have found something potentially relevant. It has not been used as evidence yet. |
+| **Review a passage** | You select exact wording, record where it appears, check the context, and explain why it relates to the case. |
+| **Approve and save source** | The reviewed passage becomes evidence available to the research case. |
+
+Uploads stay in the local workspace. PDFs use embedded text for search. Scanned PDFs need OCR before their text can be searched. Video and audio can be retained with a timestamped WebVTT or SRT transcript. The app uses a supplied transcript when searching recordings.
 
 ## Install and start
 
-1. Get access to this private repository, then clone it or choose **Code → Download ZIP** and extract it.
-2. Install Python 3.10 or later. Open a terminal in the project folder and run the commands for your system.
+You need Python 3.10 or later.
 
-**macOS and Linux**
+1. Clone this repository or choose **Code → Download ZIP** and extract it.
+2. Open a terminal in the extracted project folder.
+3. Run the commands for your system.
+
+### macOS and Linux
 
 ```sh
 python3 -m venv .venv
@@ -15,7 +72,7 @@ python3 -m venv .venv
 .venv/bin/python -m dd_research_runtime.local_app
 ```
 
-**Windows PowerShell**
+### Windows PowerShell
 
 ```powershell
 py -3 -m venv .venv
@@ -23,17 +80,17 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m dd_research_runtime.local_app
 ```
 
-3. Open the private link printed in the terminal. Keep the terminal running while you use Double Diamond. Run the last command again whenever you want to reopen it.
+The final command prints a private local link. Open it in your browser and leave the terminal running while you use the workspace. Run that final command again whenever you want to reopen it.
 
-## Start a case
+## Where your work is stored
 
-Use **Start a research case** for your own question or **Create practice case** to explore the workflow with invented evidence. Your cases start fresh and are stored in the local `research-workspace` folder. The link printed in the terminal grants access to that running workspace. Keep it private.
+Each installation creates a `research-workspace` folder beside the application. It holds your research cases and the application’s local records. Keep the private link printed at launch to yourself while the workspace is running.
 
-Under **Sources**, you can search for registered publications through Crossref, save links for later, and review individual passages. You can upload PDF, DOCX, text, Markdown, WebVTT and SRT, plus MP4, MOV, WebM, MP3, M4A, WAV and OGG. PDF search uses embedded text. Scanned pages require OCR first. Recordings can be saved with an attached timestamped transcript for search. Case checkpoints exclude uploaded originals and attached transcripts.
+The workspace can create case checkpoints for the research record. Uploaded originals and attached transcripts remain in the local file library and are not included in those checkpoints.
 
 ## Run the tests
 
-Use the same Python interpreter as above to install `requirements-test.txt` and run `run_tests.py`. For example, on macOS or Linux:
+Use the same Python environment to install the test requirements and run the suite.
 
 ```sh
 .venv/bin/python -m pip install -r requirements-test.txt
