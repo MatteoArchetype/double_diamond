@@ -80,11 +80,13 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m dd_research_runtime.local_app
 ```
 
-The final command prints a private local link. Open it in your browser and leave the terminal running while you use the workspace. Run that final command again whenever you want to reopen it.
+The final command opens the workspace in your browser and also prints the private local link in case you want to open it yourself. Leave the terminal running while you use the workspace. Run that final command again whenever you want to reopen it. The link changes each time the app starts, so an old bookmark will not work. To print the link without opening a browser, add `--no-browser` to the command.
+
+On macOS, once the installation steps above are done, you can instead double-click `Start Research.command`. If macOS refuses to open it the first time, right-click the file and choose **Open**.
 
 ## Where your work is stored
 
-Each installation creates a `research-workspace` folder beside the application. It holds your research cases and the application’s local records. Keep the private link printed at launch to yourself while the workspace is running.
+Each installation creates a `research-workspace` folder beside the application, wherever you launch it from. It holds your research cases and the application’s local records. To keep them somewhere else, start the app with `--workspace /path/to/folder`. Keep the private link printed at launch to yourself while the workspace is running.
 
 The workspace can create case checkpoints for the research record. Uploaded originals and attached transcripts remain in the local file library and are not included in those checkpoints.
 
