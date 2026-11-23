@@ -129,6 +129,7 @@ function firstDiscoverPanel(){
 function firstSourcePanel(){
  return card('Choose how to add your first source',
   text('p','Choose the route that matches the material you have. You will review a specific passage before it becomes evidence in this case.','muted'),
+  text('p','Use original, real-world material for your own research. Invented passages belong only in the practice example and remain visibly marked as synthetic.','notice'),
   node('div',{class:'choice-grid'},
    node('div',{class:'choice'},text('h3','Search publications'),text('p','Search Crossref for registered research publications.'),btn('Search publications',()=>focusField('public-search-terms'))),
    node('div',{class:'choice'},text('h3','Add a link'),text('p','Keep a web source you already found for later review.'),btn('Add a source link',()=>openDetails('source-link'))),
@@ -629,6 +630,7 @@ function sourceForm(){
  const editor=form([fields.title,fields.publisher,fields.url,aids.original,fields.published_at,
   fields.group,aids.groupSuggestion,fields.passage,fields.location,fields.snapshot,fields.rationale,
   node('label',{class:'check'},synthetic,'This is a synthetic example, not real-world evidence.'),
+  text('p','Use this only for an invented practice passage. Synthetic evidence stays distinct from reviewed sources and cannot establish a real-world finding.','muted small'),
   node('label',{class:'check'},confirmed,'I opened the original, checked the excerpt and its location, and approve saving this passage as evidence.')
  ],()=>{
   const {published_at,...draft}=readForm();
