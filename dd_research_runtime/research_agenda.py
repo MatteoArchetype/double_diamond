@@ -5,7 +5,7 @@ Planning is not permission to contact participants, fetch sources or run experim
 import copy
 from .analysis_transactions import _keys,_text,_ids
 from .persistent_ingestion import _encode,_checksum
-from .reporting import report_input_digest,report_is_current
+from .reporting import report_is_current
 
 PRIORITIES={'high':0,'medium':1,'low':2}
 METHODS={'desk_review','interview','survey','experiment','analysis'}
@@ -80,7 +80,9 @@ def inspect_agenda(state,agenda_id):
 
 
 def render_markdown(agenda):
-    import html,json,re
+    import html
+    import json
+    import re
     def safe(value):
         text=value if isinstance(value,str) else json.dumps(value,ensure_ascii=False)
         return re.sub(r'([\\`*_{}\[\]()#+.!|>~-])',r'\\\1',html.escape(text,quote=False).replace('\n',' '))
@@ -108,7 +110,8 @@ def read_agenda(database,agenda_id):
 
 
 def export_agenda(database,agenda_id,destination,*,format='markdown',allow_stale=False):
-    import json,tempfile
+    import json
+    import tempfile
     from pathlib import Path
     from .checkpoints import _destination,_publish
     if format not in {'markdown','json'} or type(allow_stale) is not bool:raise ValueError('invalid agenda export options')

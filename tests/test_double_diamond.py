@@ -231,7 +231,9 @@ def test_offline_learning_loop_and_existing_destination(tmp_path):
 
 
 def test_learning_loop_cli_from_extracted_source():
-    import subprocess,sys,json
+    import subprocess
+    import sys
+    import json
     from pathlib import Path
     result=subprocess.run([sys.executable,'-m','dd_research_runtime.dd_demo'],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=30)
     assert result.returncode==0 and result.stderr==''

@@ -21,7 +21,7 @@ def test_non_synthetic_location_required():
     s.add_source({'source_id':'S1','title':'Test','provenance':'publisher','independence_cluster':'C1'})
     try: s.add_evidence({'evidence_id':'E1','source_id':'S1'})
     except ResearchInvariantError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 
 def test_contradiction_preserved():
@@ -36,7 +36,7 @@ def test_scenario_not_forecast():
     s=ResearchState()
     try: s.add_scenario({'scenario_id':'S','is_forecast':True,'assumptions':['a'],'disconfirming_indicators':['i']})
     except ResearchInvariantError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 
 def test_gate_blocks_and_then_allows():
@@ -44,7 +44,7 @@ def test_gate_blocks_and_then_allows():
     s.create_gate('G1','primary_research','interview people','need primary evidence','approve access')
     try: s.execute_gated('G1','primary_research')
     except GateRequired: pass
-    else: assert False
+    else: raise AssertionError('expected this call to be rejected')
     s.approve_gate('G1'); s.execute_gated('G1','primary_research')
     assert s.human_gates['G1']['status']=='executed'
 
@@ -77,11 +77,11 @@ def test_real_evidence_requires_location_and_known_source():
     s=ResearchState(); a=EvidenceAdapter(s)
     try: a.ingest([EvidenceCandidate('E1','UNKNOWN','x','p.1')])
     except ResearchInvariantError: pass
-    else: assert False
+    else: raise AssertionError('expected this call to be rejected')
     d=RetrievedDocument('S1','Real','Publisher','https://example.org','now','body',{'kind':'publisher'},'P1',False)
     try: a.ingest_document_findings(d,[EvidenceCandidate('E2','S1','x','')])
     except ResearchInvariantError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 
 def test_duplicate_evidence_is_idempotent():

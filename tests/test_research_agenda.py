@@ -157,7 +157,8 @@ def test_readonly_export_staleness_paths_and_markup(store,tmp_path):
 
 
 def test_cli_missing_database_never_creates_it(tmp_path):
-    import subprocess,sys
+    import subprocess
+    import sys
     missing=tmp_path/'missing.db'
     result=subprocess.run([sys.executable,'-m','dd_research_runtime.agenda_cli','inspect',str(missing),'A1'],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
     assert result.returncode==1 and not missing.exists()
@@ -195,7 +196,8 @@ def test_report_digest_binding_and_journal_tamper(store):
 
 
 def test_agenda_learning_example_and_cli(tmp_path):
-    import subprocess,sys
+    import subprocess
+    import sys
     from dd_research_runtime.agenda_demo import run_demo
     result=run_demo(tmp_path/'example')
     assert len(result['checks'])==9 and all(result['checks'].values()) and result['mvp_ready'] is False

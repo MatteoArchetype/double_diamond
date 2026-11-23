@@ -3,7 +3,6 @@
 Legacy evidence histories remain as recorded. Post-adoption states are replayed
 from the checkpoint. This is not signed history or external identity proof.
 """
-import copy
 import datetime as dt
 import json
 from .persistent_ingestion import _encode,_checksum

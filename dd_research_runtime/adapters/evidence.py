@@ -49,7 +49,7 @@ class EvidenceAdapter:
 
     @staticmethod
     def _fingerprint(source_id: str, finding: str, exact_location: str) -> str:
-        raw = f"{source_id}|{finding.strip()}|{exact_location.strip()}".encode("utf-8")
+        raw = f"{source_id}|{finding.strip()}|{exact_location.strip()}".encode()
         return sha256(raw).hexdigest()[:16]
 
     def register_document(self, doc: RetrievedDocument) -> None:

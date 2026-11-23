@@ -175,7 +175,8 @@ def test_operation_ids_global_and_no_overwrite(store):
 
 
 def test_readonly_cli_inspection_and_missing_database(store,tmp_path):
-    import subprocess,sys
+    import subprocess
+    import sys
     from pathlib import Path
     from dd_research_runtime.acceptance_cli import inspect_acceptance
     make_case(store);before=store.load()[0].snapshot()

@@ -44,13 +44,13 @@ def _validate_database(path):
         if db.execute("SELECT 1 FROM sqlite_master WHERE type IN ('trigger','view') LIMIT 1").fetchone():
             raise ValueError('unsupported checkpoint schema objects')
         tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT GLOB 'sqlite_*'")}
-        if not BASE_TABLES <= tables or tables-BASE_TABLES-QUEUE_TABLES-JOURNAL_TABLES or (tables & QUEUE_TABLES and not QUEUE_TABLES <= tables) or (tables & JOURNAL_TABLES and not JOURNAL_TABLES <= tables):
+        if not tables >= BASE_TABLES or tables-BASE_TABLES-QUEUE_TABLES-JOURNAL_TABLES or (tables & QUEUE_TABLES and not tables >= QUEUE_TABLES) or (tables & JOURNAL_TABLES and not tables >= JOURNAL_TABLES):
             raise ValueError('unsupported or incomplete checkpoint schema')
         state,sr,lr,operations=store._verify_integrity(db)
         rows=db.execute('SELECT operation_id,request_digest,review_digest,result,result_digest FROM ingestion_operations').fetchall()
         coverage=verify_archive(db,rows)
         status_counts={}
-        if QUEUE_TABLES <= tables:
+        if tables >= QUEUE_TABLES:
             from .pending_retrieval import PendingRetrievalQueue
             queue=object.__new__(PendingRetrievalQueue);queue.store=store
             status_counts=dict(sorted(Counter(c.status for c in queue._verify(db)).items()))
@@ -58,7 +58,7 @@ def _validate_database(path):
         summary=dict(state_revision=sr,ledger_revision=lr,operations=operations,
                      review_coverage=coverage,retained_snapshot_sets=snapshot_sets,
                      candidate_statuses=status_counts,tables=sorted(tables))
-        if JOURNAL_TABLES <= tables:
+        if tables >= JOURNAL_TABLES:
             from .state_journal import verify
             summary['state_mutations']=verify(db,state,sr,rows)
         return summary

@@ -187,7 +187,8 @@ def test_export_existing_snapshot_no_overwrite_and_staleness(store,tmp_path):
 
 
 def test_export_cli_missing_source_and_saved_report(store,tmp_path):
-    import subprocess,sys
+    import subprocess
+    import sys
     from pathlib import Path
     root=Path(__file__).resolve().parents[1];missing=tmp_path/'missing.db';destination=tmp_path/'draft.md'
     args=[sys.executable,'-m','dd_research_runtime.report_cli']
