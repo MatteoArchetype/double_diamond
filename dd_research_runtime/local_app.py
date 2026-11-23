@@ -9,6 +9,7 @@ import secrets
 import sqlite3
 import threading
 import uuid
+import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs,quote
@@ -27,6 +28,8 @@ from .reporting import report_is_current,render_markdown
 ACTOR='local-operator'
 CAPABILITIES={'workflow_write','analysis_write','evidence_ingest','gate_propose','gate_decide'}
 ASSETS=Path(__file__).parent/'webapp'
+# Anchored to the application folder so cases do not seem to vanish when the app is launched from another directory.
+DEFAULT_WORKSPACE=Path(__file__).resolve().parent.parent/'research-workspace'
 
 
 def _authorize(actor,capability):return actor==ACTOR and capability in CAPABILITIES
@@ -517,13 +520,30 @@ class Handler(BaseHTTPRequestHandler):
             self._reply(403 if isinstance(exc,PermissionError) else 409 if isinstance(exc,RuntimeError) else 400,dict(error=str(exc)))
 
 
+def _parse_args(argv=None):
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--workspace',default=str(DEFAULT_WORKSPACE),
+                        help='Folder for research cases. Defaults to a research-workspace folder beside the application, wherever you launch it from.')
+    parser.add_argument('--port',type=int,default=0)
+    parser.add_argument('--demo',action='store_true')
+    parser.add_argument('--no-browser',action='store_true',help='Print the private link without opening it in your browser.')
+    return parser.parse_args(argv)
+
+
+def _open_browser(url):
+    """Best effort only: the printed link always works, so a failure here is not an error."""
+    try:webbrowser.open(url)
+    except Exception:pass
+
+
 def main(argv=None):
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--workspace',default='research-workspace');parser.add_argument('--port',type=int,default=0);parser.add_argument('--demo',action='store_true');args=parser.parse_args(argv)
+    args=_parse_args(argv)
     workspace=Workspace(args.workspace)
     if args.demo:workspace.demo()
     server=LocalServer(workspace,args.port)
     print('Open your private local research workspace: '+server.url,flush=True)
     print('Keep this process running while using the interface. Press Ctrl+C to stop.',flush=True)
+    if not args.no_browser:_open_browser(server.url)
     try:server.serve_forever()
     except KeyboardInterrupt:pass
     finally:server.server_close()
