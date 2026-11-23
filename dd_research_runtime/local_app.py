@@ -1,6 +1,7 @@
 """Single-operator, loopback research interface. Optional public publication search."""
 import argparse
 import hmac
+from datetime import datetime
 import json
 import mimetypes
 import os
@@ -106,12 +107,44 @@ class Workspace:
                 title=meta['title']
                 state,revision,_,_=_read_state(self.case_path(folder.name)/'research.sqlite')
                 if getattr(state,'workflow',{}).get('workflow_version') not in {2,3}:raise ValueError('unsupported browser workflow')
-                result.append(dict(case_id=folder.name,title=title,synthetic_example=meta['synthetic_example'],phase=getattr(state,'workflow',{}).get('phase','brief'),status=getattr(state,'workflow',{}).get('status','active'),revision=revision))
+                result.append(dict(case_id=folder.name,title=title,synthetic_example=meta['synthetic_example'],phase=getattr(state,'workflow',{}).get('phase','brief'),status=getattr(state,'workflow',{}).get('status','active'),revision=revision,updated_at=int(database.stat().st_mtime)))
             except (OSError,ValueError,KeyError,TypeError,RuntimeError,sqlite3.Error,ResearchInvariantError):
                 unavailable.append(dict(case_id=folder.name,title=title[:400],reason='case_unavailable'))
+        # Most recently worked-on first: the identifier order is opaque to the operator.
+        result.sort(key=lambda case:(case['updated_at'],case['title'].casefold()),reverse=True)
         return dict(cases=result,unavailable_cases=unavailable)
 
     def cases(self):return self.catalog()['cases']
+
+    def _read_meta(self,folder):
+        meta_path=folder/'case-info.json'
+        if meta_path.is_symlink():raise ValueError('unsupported case metadata link')
+        meta=json.loads(meta_path.read_text())
+        if not isinstance(meta,dict) or not isinstance(meta.get('title'),str) or not meta['title'].strip() or type(meta.get('synthetic_example')) is not bool:raise ValueError('invalid case metadata')
+        return meta_path,meta
+
+    def rename(self,cid,title):
+        """Change the display title only; the research record is untouched."""
+        _text(title,'title');title=title.strip()
+        if len(title)>200:raise ValueError('Choose a title of up to 200 characters.')
+        folder=self.case_path(cid);meta_path,meta=self._read_meta(folder)
+        meta['title']=title
+        staged=folder/'.case-info.tmp'
+        try:
+            staged.write_text(_encode(meta));os.chmod(staged,0o600);os.replace(staged,meta_path)
+        finally:
+            if staged.exists():staged.unlink()
+        return dict(case_id=cid,title=title)
+
+    def delete(self,cid,confirm_title):
+        """Move a case into the workspace trash so a mistake is still recoverable."""
+        folder=self.case_path(cid);_,meta=self._read_meta(folder)
+        if not isinstance(confirm_title,str) or confirm_title.strip()!=meta['title']:
+            raise ValueError('Type the exact case title to confirm deletion.')
+        trash=self.path/'.trash';trash.mkdir(mode=0o700,exist_ok=True)
+        target=trash/(cid+'-'+datetime.now().strftime('%Y%m%dT%H%M%S'))
+        os.replace(folder,target)
+        return dict(case_id=cid,title=meta['title'],moved_to=target.name)
 
     def _publish_case(self,cid,folder,fault):
         """Expose an already verified staged case without replacing existing research."""
@@ -451,8 +484,9 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Content-Type','').split(';')[0]!='application/octet-stream':
                     raise ValueError('Choose a Word .docx file.')
                 size=int(self.headers.get('Content-Length','-1'))
-                if self.headers.get('Transfer-Encoding') or not 0<size<=MAX_FILE_BYTES:
+                if self.headers.get('Transfer-Encoding') or size>MAX_FILE_BYTES:
                     raise ValueError('Choose a supported file no larger than 64 MiB.')
+                if size<1:raise ValueError('That file is empty. Choose a file with something in it.')
                 payload=self.rfile.read(size)
                 if len(payload)!=size:raise ValueError('Incomplete document upload.')
                 if path=='/api/document-transcript':
@@ -479,7 +513,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get('Content-Type','').split(';')[0]!='application/json':raise ValueError('JSON request required')
             size=int(self.headers.get('Content-Length','-1'))
             if self.headers.get('Transfer-Encoding') or not 0<=size<=2*1024*1024:raise ValueError('Request exceeds local interface limits.')
-            body=json.loads(self.rfile.read(size))
+            try:body=json.loads(self.rfile.read(size))
+            except json.JSONDecodeError:raise ValueError('The request could not be read. Refresh the page and try again.') from None
             if path=='/api/document-search':
                 _keys(body,{'case_id','query'},{'mode'})
                 return self._reply(200,self.server.workspace.documents(body['case_id']).search(body['query'],body.get('mode','phrase')))
@@ -511,6 +546,12 @@ class Handler(BaseHTTPRequestHandler):
                     _keys(body,{'kind'})
                     if body['kind']!='synthetic_learning_example':raise ValueError('Only the clearly labelled synthetic learning example can be created here.')
                     return self._reply(201,dict(case_id=self.server.workspace.demo(),synthetic_example=True))
+                if path=='/api/case/rename':
+                    _keys(body,{'case_id','title'})
+                    return self._reply(200,self.server.workspace.rename(body['case_id'],body['title']))
+                if path=='/api/case/delete':
+                    _keys(body,{'case_id','title'})
+                    return self._reply(200,self.server.workspace.delete(body['case_id'],body['title']))
                 if path=='/api/cases':return self._reply(201,dict(case_id=self.server.workspace.create(body)))
                 if path=='/api/action':
                     _keys(body,{'case_id','request'})

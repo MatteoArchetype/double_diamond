@@ -3,7 +3,6 @@
 Integrity verification is not authentication of sources, reviewers or earlier approvals.
 """
 import hashlib
-import json
 import os
 import tempfile
 import uuid
@@ -31,7 +30,9 @@ def _read_state(database):
 def _unpack(data,root):
     digest=_payload(data);archive=root/'upload.zip';archive.write_bytes(data)
     folder=root/'case';folder.mkdir(mode=0o700)
-    manifest=restore_checkpoint(archive,folder/'research.sqlite')
+    # restore_checkpoint verifies the archive and publishes the database itself; the
+    # returned manifest is not needed here because the preview is read from state.
+    restore_checkpoint(archive,folder/'research.sqlite')
     state,sr,lr,_=_read_state(folder/'research.sqlite')
     workflow=getattr(state,'workflow',{})
     if workflow.get('workflow_version')!=3:raise ValueError('The browser can restore criterion-linked Double Diamond cases only. Use the checkpoint tools for earlier workflow formats.')

@@ -9,6 +9,22 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-test.txt
+      - name: Ruff
+        run: python -m ruff check .
+
   test:
     name: ${{ matrix.os }}, Python ${{ matrix.python }}
     runs-on: ${{ matrix.os }}
@@ -21,6 +37,8 @@ jobs:
           # The README promises Python 3.10 or later, so test the oldest and newest.
           - { os: ubuntu-latest, python: "3.10", experimental: false }
           - { os: ubuntu-latest, python: "3.13", experimental: false }
+          # Coverage is measured once, on the current interpreter.
+          - { os: ubuntu-latest, python: "3.13", coverage: true, experimental: false }
           - { os: macos-latest, python: "3.13", experimental: false }
           # Windows has not been run before. It reports results without blocking
           # merges until it is known to pass; remove experimental once it does.
@@ -35,4 +53,8 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-test.txt
       - name: Run the full suite
+        if: ${{ !matrix.coverage }}
         run: python run_tests.py
+      - name: Run the full suite with coverage
+        if: ${{ matrix.coverage }}
+        run: python -m pytest --cov --cov-report=term-missing --cov-fail-under=88
