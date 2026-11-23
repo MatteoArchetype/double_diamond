@@ -89,6 +89,8 @@ function discoverBriefPanel(){
  return card('Your question · initial Discover notes',tag('Real public sources · notes for review'),text('p','These are initial notes from real sources, not final findings. They are ready for your review. No source approval or move to the next stage has been recorded.','notice'),text('h3','What the first sources suggest'),text('p',p.summary),text('h3','Working ideas to test'),list(p.interpretations),text('h3','What we still need to learn'),list(p.gaps),text('h3','Sources to review'),text('p','Open each source to see what it supports and its limits. These are real publications, not made-up examples.','muted small'),...sourceBlocks,text('p','Next decision: review these source selections and the limits of this initial interpretation before we save a Discover finding or propose a problem frame.','muted small'));
 }
 function guidancePanel(){const g=view.guidance;if(!g)return null;return card('Where you are · '+phaseNames[g.phase],tag('Guidance · no action authorized'),text('h3',g.title),text('p',g.detail),g.outdated_research_reviews?text('p',String(g.outdated_research_reviews)+' outdated research review(s) remain in Approvals as history. They do not authorize changed research.','notice'):null,btn(g.navigation.label,()=>{resetInspection();if(g.navigation.tab==='Sources'){openSources();return;}tab=g.navigation.tab;render();if(tab==='Research')document.getElementById('research-work')?.scrollIntoView({block:'start'});},'primary'),node('details',{class:'details'},node('summary',{},'Saved progress and remaining visits'),...g.phases.map(p=>value(phaseNames[p.phase],p.status==='needs_review'?'Needs review':p.status==='saved'?'Saved finding':'Not recorded')),value('Phase visits remaining',String(g.visits_remaining)),text('p',g.budget_note,'muted small')),text('p',g.boundary,'muted small'));}
+const fullGuidancePanel=guidancePanel;
+guidancePanel=()=>startingDiscover()?null:fullGuidancePanel();
 function sourceChoices(){return Object.entries(view.state.evidence).map(([id,e])=>[id,(e.synthetic?'[Synthetic] ':'')+(e.metadata?.title||e.finding.slice(0,70))]);}
 function claimChoices(){return Object.entries(view.state.claims).map(([id,c])=>[id,c.claim]);}
 function focusHeading(id){
@@ -96,6 +98,54 @@ function focusHeading(id){
  if(!heading)return;
  heading.tabIndex=-1;
  heading.focus();
+}
+function focusField(id){
+ const control=document.getElementById(id);
+ if(!control)return;
+ control.scrollIntoView({block:'center'});
+ control.focus();
+}
+function openDetails(id){
+ const details=document.getElementById(id);
+ if(!details)return;
+ details.open=true;
+ details.scrollIntoView({block:'start'});
+ details.querySelector('input, textarea, select')?.focus();
+}
+function startingDiscover(){
+ const workflow=view?.state?.workflow;
+ return workflow?.status==='active'&&workflow.phase==='discover'&&!workflow.records.discover
+  &&!Object.keys(view.state.evidence).length;
+}
+function firstDiscoverPanel(){
+ return card('Your first step',
+  text('p','Find one source that can help you explore your question. Save one short passage from it, with enough context to understand what the author meant.'),
+  node('ol',{class:'onboarding-steps'},
+   text('li','Find a publication, add a source link, or upload a file.'),
+   text('li','Review one passage with its page number, section, or timestamp.'),
+   text('li','Return here to record what you learned and what remains open.')),
+  text('p','You can build from there. You do not need to plan every phase before beginning.','muted small'));
+}
+function firstSourcePanel(){
+ return card('Choose how to add your first source',
+  text('p','Choose the route that matches the material you have. You will review a specific passage before it becomes evidence in this case.','muted'),
+  node('div',{class:'choice-grid'},
+   node('div',{class:'choice'},text('h3','Search publications'),text('p','Search Crossref for registered research publications.'),btn('Search publications',()=>focusField('public-search-terms'))),
+   node('div',{class:'choice'},text('h3','Add a link'),text('p','Keep a web source you already found for later review.'),btn('Add a source link',()=>openDetails('source-link'))),
+   node('div',{class:'choice'},text('h3','Upload a file'),text('p','Work from a PDF, document, transcript, recording, or video saved on this computer.'),btn('Upload a research file',()=>focusHeading('source-upload')))));
+}
+function exampleGuidePanel(){
+ const go=next=>{resetInspection();tab=next;render();app.querySelector('[data-current-research-section]')?.focus();};
+ return card('How to explore this example',
+  text('p','This is a completed, invented practice case. It is here to show how the workspace keeps evidence, choices and limits connected — not to provide real findings or a template answer.','muted'),
+  node('ol',{class:'onboarding-steps'},
+   text('li','Read the research trail to see what was recorded in each Double Diamond phase.'),
+   text('li','Inspect the passages to see how evidence is marked as synthetic and retained with context.'),
+   text('li','Read the saved draft to see the final decision, its limits and what further research would be needed.')),
+  node('div',{class:'button-row'},
+   btn('Open research trail',()=>go('Research'),'primary'),
+   btn('Inspect example evidence',()=>go('Sources')),
+   btn('Read saved draft',()=>go('Reports'))));
 }
 function openSources(){
  tab='Sources';
@@ -218,6 +268,7 @@ function sourceSearchPanel(prepareSource){
   }finally{submit.disabled=false;}
  },'Save source for later');
  const query=field('Public search terms',{hint:'Try a few words from your question. Only the terms you enter here are sent to Crossref.'});
+ query.input.id='public-search-terms';
  query.input.maxLength=300;
  const status=node('p',{role:'status',class:'muted small'});
  const results=node('div');
@@ -238,8 +289,8 @@ function sourceSearchPanel(prepareSource){
   finally{submit.disabled=false;}
  },'Search publications');
  return node('div',{},
-  card('Find public research sources',text('p','This tool uses Crossref to search registered research publications, including articles, books and reports. Enter search terms below to find publications, then open the originals to review them.','muted'),search,status,results),
-  card('Sources saved for later',text('p','Save links from search results or add a source you already found. Entering details here saves the source in this case for later review. To find a paper, use Search publications above. Review and approve a passage before using it as evidence. Case checkpoint downloads exclude these saved links.','muted small'),savedStatus,saved,node('details',{class:'details'},node('summary',{},'Save a source you already found'),text('p','Enter the title and link of a source you want to remember.','muted small'),manual)));
+  node('section',{id:'source-search'},card('Find public research sources',text('p','This tool uses Crossref to search registered research publications, including articles, books and reports. Enter search terms below to find publications, then open the originals to review them.','muted'),search,status,results)),
+  card('Sources saved for later',text('p','Save links from search results or add a source you already found. Entering details here saves the source in this case for later review. To find a paper, use Search publications above. Review and approve a passage before using it as evidence. Case checkpoint downloads exclude these saved links.','muted small'),savedStatus,saved,node('details',{class:'details',id:'source-link'},node('summary',{},'Save a source you already found'),text('p','Enter the title and link of a source you want to remember.','muted small'),manual)));
 }
 function documentPassageSearch(paragraphs,notice,usePassage){
  const query=field('Words or phrase to find');
@@ -467,11 +518,11 @@ function documentPreviewPanel(prepareSource){
   }catch(e){status.textContent=e.message;}
   finally{reading=false;file.disabled=false;keep.disabled=false;submit.disabled=false;}
  },'Read document details');
- return card('Upload research files',
+ return node('section',{id:'source-upload'},card('Upload research files',
   text('p','Upload PDF, Word (.docx), text (.txt), Markdown (.md), transcripts (.vtt, .srt), video (.mp4, .mov, .webm) or audio (.mp3, .m4a, .wav, .ogg). Files stay on this computer and are excluded from case checkpoints. Maximum 64 MiB per file, 8 MiB for Word and 2 MiB for text.','muted'),
   text('p','PDF search uses embedded text. Scanned PDFs need OCR first. Save a recording, then attach its WebVTT or SRT transcript to search timestamped passages. Automatic transcription is unavailable.' ,'muted small'),
   upload,text('h3','Saved research files'),libraryStatus,library,
-  caseDocumentSearch(view.case_id,openDocument,prepareSource),status,preview);
+  caseDocumentSearch(view.case_id,openDocument,prepareSource),status,preview));
 }
 function draftControls(route,context,editor,readForm,writeForm,heading,description,hasDraft){
  const encode=value=>JSON.stringify(value,(_,item)=>
@@ -899,10 +950,14 @@ const prior=phase==='define'?[...w.visits].reverse().find(v=>v.phase==='define'&
 const editor=form([...fields,reason],()=>{const record=build();if(phase==='develop'){const missing=record.alternatives.findIndex(a=>!a.claim_ids.length);if(missing>=0){error='Choose at least one interpretation for Alternative '+(missing+1)+'.';render();return;}}perform('phase_record',{record,rationale:reason.get()});},'Save '+phaseNames[phase]+' record');
 return card(names[phase],pendingFrame?node('div',{class:'notice'},text('p',pendingFrame.status==='approved'?'An approved frame is saved and awaiting application.':'A revised frame is saved and awaiting review.'),btn('Continue saved frame review',()=>{tab='Approvals';render();})):null,seed?text('div','Unsaved draft copied from '+frameSeed.source_visit_id+'. Check the current interpretations and uncertainties. No approval was copied.','notice'):null,prior?btn('Review previous saved frame',()=>openVisit(prior.visit_id)):null,text('p','Save one record for this visit. To revise it later, request a return to this phase.','muted small'),editor,visitDraft?visitDraft(editor):null);}
 function reviewCard(gid,g){const a=g.action?.payload||{},isFrame=g.gate_type==='material_reframing',current=view.gate_context_current?.[gid]===true;let proposed=null,why=g.proposal_rationale;try{const parsed=JSON.parse(why);if(parsed.proposed_record){proposed=parsed.proposed_record;why=parsed.reason;}}catch(_){}const c=card(isFrame?'Review revised problem frame':'Review phase change',node('div',{class:'tags'},tag(readable(g.status),g.status==='pending_review')),value('Reason',why));if(!current)c.append(tag('Outdated research context',true),text('p','Research has changed since this proposal. Its recorded decision is retained, but it cannot authorize the current research. Review the saved findings and request a new change.','notice'),btn('Review current research',()=>{tab='Research';render();}));if(isFrame&&proposed){const prior=[...view.state.workflow.visits].reverse().find(v=>v.phase==='define'&&v.record);if(prior&&current)c.append(value('Previous problem',prior.record.problem),value('Previous success criteria',prior.record.success_criteria.join('\n')),value('Changed sections',['problem','success_criteria','claim_ids','uncertainty_ids'].filter(k=>JSON.stringify(prior.record[k])!==JSON.stringify(proposed[k])).map(readable).join(', ')),btn('Inspect preceding saved frame',()=>openVisit(prior.visit_id)));c.append(value('Proposed problem',proposed.problem),value('Success criteria',proposed.success_criteria.join('\n')),value(current?'Interpretations informing this frame':'Interpretation references in the original proposal',proposed.claim_ids.map(id=>current?(view.state.claims[id]?.claim||id):id).join('\n')),value(current?'Uncertainties included':'Uncertainty references in the original proposal',proposed.uncertainty_ids.map(id=>current?(view.state.uncertainties[id]?.question||id):id).join('\n')||'None recorded'));}else c.append(value('From',phaseNames[a.from_phase]||a.from_phase),value('To',phaseNames[a.to_phase]||a.to_phase),value('Why return or progress',a.reason));if(g.status==='pending_review'){const reason=field(current?'Your approval or rejection reason':'Your rejection reason',{type:'textarea'});if(current)c.append(form([reason],()=>perform('decide_gate',{gate_id:gid,decision:'approve',rationale:reason.get()}),'Approve this exact change'));c.append(...(current?[]:[reason.wrap]),btn('Reject this proposal',()=>{if(!reason.get().trim()){reason.input.focus();return;}perform('decide_gate',{gate_id:gid,decision:'reject',rationale:reason.get()});},'danger'));}if(g.status==='approved'&&current)c.append(text('p','Approval is saved. Applying it will change this case; stale or changed content will be refused.','muted small'),btn('Apply approved change',()=>perform('apply_gate',{gate_id:gid,rationale:'Operator explicitly applied the reviewed change'}),'primary'));return c;}
-function researchView(){const w=view.state.workflow;const left=node('div');if(inspectingVisit){left.append(btn('Return to current research',()=>{resetInspection();render();}));if(reviewPending)left.append(card('Opening original saved context',text('p','Checking this visit against its retained research history…','muted')));else if(visitReview){left.append(visitPanel(visitReview));if(visitReview.visit.phase==='define'&&visitReview.visit.record&&w.status==='active'&&w.phase==='define'&&!w.records.define){left.append(card('Prepare a revised frame',text('p','Copying replaces any unsaved Define form. It does not save a finding or copy an approval. Changed frames still require separate human review.','muted small'),visitReview.context_status==='verified_original'?btn('Replace current Define form with this frame',()=>copyReviewedFrame(),'primary'):text('p','Original context is unavailable. Write a fresh draft instead.','notice')));}}else left.append(card('Saved context could not be opened',text('p','Refresh saved research and inspect the visit again.','muted')));}else if(w.status==='active'&&!w.records[w.phase])left.append(phaseForm());else{const current=w.records[w.phase];left.append(card(w.status==='active'?'This phase is saved':'This research pass is '+w.status,value('Current phase',phaseNames[w.phase]),current?value('Recorded finding',current.summary||current.problem||current.notes||'Competing alternatives are recorded.'):null,text('p','Earlier findings and their review history are retained.','muted small'),btn('Inspect full saved finding',()=>openVisit(w.visits.at(-1).visit_id))));}
+function fullResearchView(){const w=view.state.workflow;const left=node('div');if(inspectingVisit){left.append(btn('Return to current research',()=>{resetInspection();render();}));if(reviewPending)left.append(card('Opening original saved context',text('p','Checking this visit against its retained research history…','muted')));else if(visitReview){left.append(visitPanel(visitReview));if(visitReview.visit.phase==='define'&&visitReview.visit.record&&w.status==='active'&&w.phase==='define'&&!w.records.define){left.append(card('Prepare a revised frame',text('p','Copying replaces any unsaved Define form. It does not save a finding or copy an approval. Changed frames still require separate human review.','muted small'),visitReview.context_status==='verified_original'?btn('Replace current Define form with this frame',()=>copyReviewedFrame(),'primary'):text('p','Original context is unavailable. Write a fresh draft instead.','notice')));}}else left.append(card('Saved context could not be opened',text('p','Refresh saved research and inspect the visit again.','muted')));}else if(w.status==='active'&&!w.records[w.phase])left.append(phaseForm());else{const current=w.records[w.phase];left.append(card(w.status==='active'?'This phase is saved':'This research pass is '+w.status,value('Current phase',phaseNames[w.phase]),current?value('Recorded finding',current.summary||current.problem||current.notes||'Competing alternatives are recorded.'):null,text('p','Earlier findings and their review history are retained.','muted small'),btn('Inspect full saved finding',()=>openVisit(w.visits.at(-1).visit_id))));}
 const right=node('div');const next=phases[phases.indexOf(w.phase)+1];const targets=w.status!=='active'?phases.slice(0,phases.indexOf(w.phase)+1):[...(next&&w.records[w.phase]?[next]:[]),...phases.slice(0,phases.indexOf(w.phase)+1)];const target=field('Where should the research go?',{type:'select',options:targets.map(p=>[p,phaseNames[p]])}),reason=field('What have you learned, or why move?',{type:'textarea'});right.append(card((w.status==='active'?'Next research decision':'Return to research')+' · '+phaseNames[w.phase],form([target,reason],()=>perform('propose_transition',{target:target.get(),rationale:reason.get()}),'Request human review'),text('p','Requesting a change does not approve it. Review it in Approvals.','muted small')));
 const stop=field('Why stop or escalate?',{type:'textarea'});if(w.status==='active')right.append(card('Stop this pass',form([stop],()=>perform('finish',{outcome:'stopped',rationale:stop.get()}),'Finish this research pass'),btn('Escalate with this reason',()=>{if(stop.get().trim())perform('finish',{outcome:'escalated',rationale:stop.get()});else stop.input.focus();}),text('p','Finishing needs current Deliver findings. Escalation can preserve incomplete work.','muted small')));
 const visits=node('div');for(const v of w.visits)visits.append(node('details',{class:'details'},node('summary',{},v.visit_id+' · '+phaseNames[v.phase]+(v.record?' · saved':' · open')),value('Why this visit',v.reason),v.record?value('Original finding',v.record.summary||v.record.problem||v.record.notes||'Competing alternatives recorded'):null,btn('Inspect '+phaseNames[v.phase]+' visit '+v.visit_id,()=>openVisit(v.visit_id))));right.append(card('Research history',visits));return node('div',{class:'grid',id:'research-work'},left,right);}
+function researchView(){
+ if(!startingDiscover())return fullResearchView();
+ return node('div',{id:'research-work'},firstDiscoverPanel(),node('details',{class:'details'},node('summary',{},'Research controls and saved history'),guidancePanel(),fullResearchView()));
+}
 function resetSourceContext(){sourceContext=null;sourceContextId=null;sourceContextPending=false;sourceContextGeneration++;}
 async function openSourceContext(id){if(busy)return;const generation=++sourceContextGeneration,cid=view.case_id,revision=view.revision;sourceContextId=id;sourceContext=null;sourceContextPending=true;error='';render();try{const result=await api('/api/source-context?case='+cid+'&evidence='+encodeURIComponent(id)+'&revision='+revision);if(generation===sourceContextGeneration&&view.case_id===cid&&view.revision===revision)sourceContext=result;}catch(e){if(generation===sourceContextGeneration)error=e.message;}finally{if(generation===sourceContextGeneration){sourceContextPending=false;render();focusHeading('source-context-title');}}}
 function sourceContextPanel(){if(!sourceContextId)return null;const panel=card(null,node('h2',{id:'source-context-title'},'Retained source context'),btn('Close source context',()=>{resetSourceContext();render();focusHeading('sources-approved');}));if(sourceContextPending){panel.append(text('p','Checking the retained intake records…'));return panel;}if(!sourceContext){panel.append(text('p','Context could not be opened. Refresh saved research and try again.','notice'));return panel;}const c=sourceContext;const digest=c.evidence.metadata?.document_sha256;if(digest)panel.append(originalDocumentDownload(view.case_id,digest));panel.append(tag(c.evidence.synthetic?'Synthetic example':'Source record',c.evidence.synthetic),text('p',c.boundary,'notice'),value('Retained passage',c.evidence.finding),value('Exact location',c.evidence.exact_location));if(c.snapshot)panel.append(value('Source text retained at intake',c.snapshot.text),value('Retained snapshot location',c.snapshot.location));else panel.append(text('p','No source text snapshot was retained for this evidence. The passage alone is not a substitute for its original context.','notice'));if(c.review)panel.append(value('Recorded intake reviewer',c.review.reviewer),value('Recorded intake decision',c.review.decision),value('Recorded reason',c.review.rationale));else panel.append(text('p','No original intake review payload is available for this historical evidence.','notice'));return panel;}
@@ -974,6 +1029,7 @@ function reviewedEvidenceSearch(evidence){
 function sourcesView(){
  const evidence=Object.values(view.state.evidence);
  const {find,review}=sourceForm();
+ const firstSource=!evidence.length;
  const approved=node('section',{},node('h2',{id:'sources-approved'},'3. Approved evidence'),sourceContextPanel(),
   evidence.length?reviewedEvidenceSearch(evidence):card('No reviewed evidence yet',
    text('p','A passage appears here after you check its original context and approve it.','muted')),
@@ -983,7 +1039,7 @@ function sourcesView(){
    value(e.metadata?.document_sha256?'Saved file reference':'Source URL',e.metadata?.url),
    value('Shared source group',e.independence_cluster),
    btn('Inspect saved context for '+(e.metadata?.title||e.evidence_id),()=>openSourceContext(e.evidence_id)))));
- return node('div',{},node('nav',{'aria-label':'Source steps',class:'tabs'},
+ return node('div',{},firstSource?firstSourcePanel():null,node('nav',{'aria-label':'Source steps',class:'tabs'},
   btn('Find a source',()=>focusHeading('sources-find')),
   btn('Review a passage',()=>focusHeading('sources-review')),
   btn('Approved evidence',()=>focusHeading('sources-approved'))),
@@ -1211,14 +1267,18 @@ function render(restoredEditor){if(renderedKey&&renderedKey!=='restore'&&documen
  app.replaceChildren();const side=node('aside',{class:'sidebar'},node('div',{class:'brand'},text('span','◇◇','diamonds'),node('div',{},'Double Diamond',text('div','Research workspace','muted small'))),btn('Workspace home',openHome),btn('+ New research case',openCreateForm,'primary'));const list=node('div',{class:'case-list'},text('div','Your research','eyebrow'));for(const c of cases)list.append(btn(c.title,()=>choose(c.case_id),'case-button'+(view?.case_id===c.case_id?' active':'')));side.append(btn('Restore a backup',()=>{restoring=true;creating=false;error='';message='';render();}),list,text('p','Local workspace. Your research is saved on this computer. Final host acceptance and external actions remain separate.','foot'));const main=node('main');main.append(node('div',{class:'topbar'},'A question → evidence → a research decision',btn('Refresh saved research',()=>refresh().catch(e=>{error=e.message;render();}))));if(error)main.append(text('div',error,'notice error'));if(message)main.append(text('div',message,'notice good'));if(unavailableCases.length)main.append(card('Some saved research could not be opened',text('p','The files for '+String(unavailableCases.length)+(unavailableCases.length===1?' saved case':' saved cases')+' could not be verified and were left unchanged. Your other cases remain available.','notice'),...unavailableCases.map(c=>value('Unavailable case',c.title)),text('p','Keep the original files for inspection. If you have a trusted checkpoint, use Restore a backup to create a separate copy. Nothing is repaired or deleted automatically.','muted small')));if(busy)main.append(text('div','Saving or opening verified research…','notice'));
 if(restoring)main.append(restorePanel());else if(creating)main.append(createForm());else if(!view){
  main.append(
-  node('div',{class:'hero'},node('h1',{id:'workspace-home-title'},'Research that can explain its reasoning.'),
-   text('p','Explore evidence and perspectives, frame the right problem, compare alternatives, and decide what to investigate next.')),
+  node('div',{class:'hero'},node('div','A guided research workspace','eyebrow'),node('h1',{id:'workspace-home-title'},'Turn a question into a traceable research decision.'),
+   text('p','Gather evidence, understand what it supports, compare possible directions, and make your reasoning visible from start to finish.')),
+  card('How it works',node('div',{class:'choice-grid'},
+   node('div',{class:'choice'},text('h3','1. Ask a question'),text('p','Start with something you want to understand. You can narrow the scope as you learn.')),
+   node('div',{class:'choice'},text('h3','2. Review evidence'),text('p','Save exact passages from sources and check their original context before using them.')),
+   node('div',{class:'choice'},text('h3','3. Decide carefully'),text('p','Use the Double Diamond phases to frame the problem, compare alternatives, and record the limits of your decision.')))),
   node('div',{class:'phase-strip'},...phases.map(p=>node('div',{class:'card subtle'},text('h3',phaseNames[p]),text('p',names[p],'small')))),
-  card('Start your research',btn('Start a research case',openCreateForm,'primary')),
-  card('Try a practice case',text('p','Explore the four phases with invented evidence and simulated decisions.','muted'),
-   btn('Create practice case',createLearningExample))
+  card('Start your research',text('p','Create a case around your own question. Your first task will be to add one source and review a passage from it.','muted'),btn('Start a research case',openCreateForm,'primary')),
+  card('Explore a completed example',text('p','Open a local practice copy to inspect how evidence, choices, and limits are recorded across the four phases. It uses invented evidence and simulated decisions.','muted'),
+   btn('Open practice example',createLearningExample))
  );
-}else{const w=view.state.workflow;main.append(node('div',{class:'hero'},node('div',{class:'tags'},tag(view.meta.restored_checkpoint?'Restored copy':view.meta.synthetic_example?'Synthetic learning example':'Your research',view.meta.synthetic_example),view.meta.synthetic_only?tag('Synthetic evidence only',true):null,tag(w.status),tag('Visit '+w.visits.length+' of '+w.max_visits)),node('h1',{id:'research-case-title'},view.meta.title),text('p',view.state.brief.text),node('details',{class:'details'},node('summary',{},'What this research covers'),text('p',view.state.scope?.text||'Not recorded','small'))));if(view.meta.restored_checkpoint)main.append(text('div','Restored as a separate case. Source labels and historical decisions were retained. Restoration does not authenticate or renew earlier approvals.','notice'));if(view.meta.synthetic_example)main.append(text('div','This example uses synthetic evidence and simulated historical approvals. It does not establish real findings or actual human acceptance.','notice'));if(Object.values(view.currency).some(current=>!current))main.append(text('div','Some saved phase findings are stale. Review the new evidence and request a return before drawing a new conclusion.','notice'));main.append(node('div',{class:'phase-strip'},...phases.map(p=>{const b=btn(phaseNames[p],()=>{const visit=[...w.visits].reverse().find(v=>v.phase===p);if(visit)openVisit(visit.visit_id);else{resetInspection();tab='Research';message=phaseNames[p]+' has no visit yet. Inspecting phases does not move the research.';render();}},p===w.phase?'current':'');b.append(text('small',(p===w.phase?'Current · ':'')+(w.records[p]?'Saved':view.meta.discover_brief&&p==='discover'?'Notes for review':'Not recorded')));return b;})));const tabs=['Research','Sources','Interpretations','Evidence fit','Approvals','Reports','Next research','Backups'];main.append(node('nav',{class:'tabs','aria-label':'Research sections'},...tabs.map(t=>{
+}else{const w=view.state.workflow;main.append(node('div',{class:'hero'},node('div',{class:'tags'},tag(view.meta.restored_checkpoint?'Restored copy':view.meta.synthetic_example?'Synthetic learning example':'Your research',view.meta.synthetic_example),view.meta.synthetic_only?tag('Synthetic evidence only',true):null,tag(w.status),tag('Visit '+w.visits.length+' of '+w.max_visits)),node('h1',{id:'research-case-title'},view.meta.title),text('p',view.state.brief.text),node('details',{class:'details'},node('summary',{},'What this research covers'),text('p',view.state.scope?.text||'Not recorded','small'))));if(view.meta.restored_checkpoint)main.append(text('div','Restored as a separate case. Source labels and historical decisions were retained. Restoration does not authenticate or renew earlier approvals.','notice'));if(view.meta.synthetic_example)main.append(text('div','This example uses synthetic evidence and simulated historical approvals. It does not establish real findings or actual human acceptance.','notice'),exampleGuidePanel());if(Object.values(view.currency).some(current=>!current))main.append(text('div','Some saved phase findings are stale. Review the new evidence and request a return before drawing a new conclusion.','notice'));main.append(node('div',{class:'phase-strip'},...phases.map(p=>{const b=btn(phaseNames[p],()=>{const visit=[...w.visits].reverse().find(v=>v.phase===p);if(visit)openVisit(visit.visit_id);else{resetInspection();tab='Research';message=phaseNames[p]+' has no visit yet. Inspecting phases does not move the research.';render();}},p===w.phase?'current':'');b.append(text('small',(p===w.phase?'Current · ':'')+(w.records[p]?'Saved':view.meta.discover_brief&&p==='discover'?'Notes for review':'Not recorded')));return b;})));const tabs=['Research','Sources','Interpretations','Evidence fit','Approvals','Reports','Next research','Backups'];main.append(node('nav',{class:'tabs','aria-label':'Research sections'},...tabs.map(t=>{
  const control=btn(t+(t==='Approvals'?' ('+Object.values(view.state.human_gates).filter(g=>g.status==='pending_review'&&view.gate_context_current?.[g.gate_id]===true&&['phase_transition','material_reframing'].includes(g.gate_type)).length+')':''),()=>{
   if(t==='Sources'){openSources();return;}
   tab=t;
