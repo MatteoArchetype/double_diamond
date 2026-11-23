@@ -1030,6 +1030,12 @@ function sourcesView(){
  const evidence=Object.values(view.state.evidence);
  const {find,review}=sourceForm();
  const firstSource=!evidence.length;
+ const readyForDiscover=evidence.length&&view.state.workflow.phase==='discover'&&!view.state.workflow.records.discover;
+ const continueDiscover=readyForDiscover?card('Your reviewed evidence is ready',
+  text('p','You can now record what this evidence helps you explore in Discover, or use it to create clearly labelled working interpretations. Neither action treats the passage as proof or moves the research forward automatically.','muted'),
+  node('div',{class:'button-row'},
+   btn('Record what you learned in Discover',()=>{tab='Research';render();document.getElementById('research-work')?.scrollIntoView({block:'start'});},'primary'),
+   btn('Create working interpretations',()=>{tab='Interpretations';render();app.querySelector('[data-current-research-section]')?.focus();}))) : null;
  const approved=node('section',{},node('h2',{id:'sources-approved'},'3. Approved evidence'),sourceContextPanel(),
   evidence.length?reviewedEvidenceSearch(evidence):card('No reviewed evidence yet',
    text('p','A passage appears here after you check its original context and approve it.','muted')),
@@ -1043,6 +1049,7 @@ function sourcesView(){
   btn('Find a source',()=>focusHeading('sources-find')),
   btn('Review a passage',()=>focusHeading('sources-review')),
   btn('Approved evidence',()=>focusHeading('sources-approved'))),
+  continueDiscover,
   node('div',{class:'grid'},
    node('section',{},node('h2',{id:'sources-find'},'1. Find a source'),find),
    node('section',{},node('h2',{id:'sources-review'},'2. Review a passage'),
