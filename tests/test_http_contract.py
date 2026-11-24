@@ -234,6 +234,46 @@ def test_concurrent_trash_restore_requests_restore_only_once(server):
     assert not (server.workspace.path / '.trash' / trash_id).exists()
 
 
+def test_trash_listing_tolerates_case_restored_during_verification(server, monkeypatch):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash_id = json.loads(_call(server, 'GET', '/api/trash')[2])['cases'][0]['trash_id']
+
+    original_verify = server.workspace._verified_trash_case
+    listing_started = threading.Event()
+    resume_listing = threading.Event()
+    verification_lock = threading.Lock()
+    should_pause = True
+
+    def pause_first_verification(folder):
+        nonlocal should_pause
+        with verification_lock:
+            pause = should_pause
+            should_pause = False
+        if pause:
+            listing_started.set()
+            assert resume_listing.wait(timeout=5)
+        return original_verify(folder)
+
+    monkeypatch.setattr(server.workspace, '_verified_trash_case', pause_first_verification)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        listing = pool.submit(_call, server, 'GET', '/api/trash')
+        try:
+            assert listing_started.wait(timeout=5)
+            status, _, raw = _call(server, 'POST', '/api/case/restore',
+                                   dict(trash_id=trash_id))
+            assert status == 200, raw
+        finally:
+            resume_listing.set()
+        status, _, raw = listing.result(timeout=10)
+
+    assert status == 200, raw
+    assert json.loads(raw)['cases'] == []
+    assert server.workspace.view(cid)['meta']['title'] == 'Contract case'
+
+
 def test_trash_restore_refuses_to_overwrite_an_active_case(server, monkeypatch):
     cid = _create(server)
     status, _, raw = _call(server, 'POST', '/api/case/delete',
