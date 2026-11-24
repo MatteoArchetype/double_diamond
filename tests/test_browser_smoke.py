@@ -4,7 +4,13 @@ These tests start the real loopback server and use the real launch token. They
 cover navigation only at the browser boundary; research invariants remain
 covered by the Python and HTTP suites.
 """
+import hashlib
+import json
+import subprocess
+import sys
 import threading
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -97,3 +103,121 @@ def test_synthetic_learning_example_opens_without_real_source_claims(browser_pag
     app_text = browser_page.locator("#app").inner_text().lower()
     assert "synthetic evidence" in app_text
     assert "simulated" in app_text
+
+
+def test_case_checkpoint_can_be_downloaded_and_restored_separately(
+    browser_page, browser_server, tmp_path
+):
+    browser_page.wait_for_selector("#workspace-home-title")
+    browser_page.get_by_role("button", name="Start a research case").click()
+    browser_page.get_by_label("What do you want to understand?").fill(
+        "How might backup recovery preserve research?"
+    )
+    browser_page.get_by_label("Case name").fill("Browser backup smoke case")
+    browser_page.get_by_role("button", name="Start research").click()
+    browser_page.wait_for_selector("#research-case-title")
+
+    original_id = parse_qs(urlparse(browser_page.url).query)["case"][0]
+    original_before = browser_server.workspace.view(original_id)
+    original_database = (
+        browser_server.workspace.path / original_id / "research.sqlite"
+    )
+    original_digest = hashlib.sha256(original_database.read_bytes()).digest()
+    browser_page.get_by_text("More research tools").click()
+    browser_page.get_by_role("button", name="Save a copy").click()
+    for label in (
+        "Total files for this case",
+        "Research database included in checkpoint",
+        "Original files and transcripts excluded",
+        "Unsaved drafts excluded",
+        "Saved source shortlist excluded",
+    ):
+        assert browser_page.get_by_text(label, exact=True).is_visible()
+
+    checkpoint = tmp_path / "browser-checkpoint.zip"
+    with browser_page.expect_download() as download_event:
+        browser_page.get_by_role("button", name="Download case checkpoint").click()
+    download_event.value.save_as(checkpoint)
+    assert checkpoint.is_file() and checkpoint.stat().st_size > 0
+
+    browser_page.get_by_role(
+        "button", name="Restore a checkpoint as a separate case"
+    ).click()
+    browser_page.get_by_label("Choose checkpoint ZIP").set_input_files(checkpoint)
+    browser_page.get_by_role("button", name="Inspect selected checkpoint").click()
+    browser_page.get_by_role("heading", name="Checkpoint inspection").wait_for()
+    assert browser_page.get_by_role("main").get_by_text(
+        "Browser backup smoke case", exact=True
+    ).is_visible()
+    browser_page.get_by_role("button", name="Cancel restore").click()
+
+    repository = Path(__file__).resolve().parents[1]
+    inspect_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dd_research_runtime.checkpoint_cli",
+            "inspect",
+            str(checkpoint),
+        ],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert json.loads(inspect_result.stdout)["ok"] is True
+    restore_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dd_research_runtime.checkpoint_cli",
+            "restore-case",
+            str(checkpoint),
+            str(browser_server.workspace.path),
+        ],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    restored_data = json.loads(restore_result.stdout)
+    assert restored_data["approval_granted"] is False
+    restored_id = restored_data["case_id"]
+    assert restored_id != original_id
+    restored = browser_server.workspace.view(restored_id)
+    assert restored["meta"]["restored_checkpoint"] is True
+    assert restored["state"] == original_before["state"]
+    assert restored["revision"] == restored_data["state_revision"]
+    assert (restored["revision"], restored["ledger_revision"]) == (
+        original_before["revision"],
+        original_before["ledger_revision"],
+    )
+    assert browser_server.workspace.view(original_id) == original_before
+    assert hashlib.sha256(original_database.read_bytes()).digest() == original_digest
+    assert {case["case_id"] for case in browser_server.workspace.cases()} == {
+        original_id,
+        restored_id,
+    }
+
+    browser_page.get_by_role("button", name="Refresh saved research").click()
+    restored_button = browser_page.get_by_role(
+        "button", name="Restored · Browser backup smoke case", exact=True
+    )
+    restored_button.wait_for()
+    restored_button.click()
+    browser_page.get_by_role(
+        "heading", name="Restored · Browser backup smoke case", exact=True
+    ).wait_for()
+    assert browser_page.get_by_text("Restored copy", exact=True).is_visible()
+
+    browser_page.get_by_role(
+        "button", name="Browser backup smoke case", exact=True
+    ).click()
+    browser_page.get_by_role(
+        "heading", name="Browser backup smoke case", exact=True
+    ).wait_for()
+    assert browser_page.locator("#research-case-title").inner_text() == (
+        "Browser backup smoke case"
+    )
