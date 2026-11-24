@@ -208,6 +208,56 @@ def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
     assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
 
 
+def test_trashed_case_survives_workspace_restart_and_restores_history(server):
+    cid = _create(server)
+    before = server.workspace.view(cid)
+    server.workspace.action(cid, dict(
+        action='claim',
+        data=dict(
+            claim='A saved interpretation survives recovery.',
+            claim_type='descriptive',
+            evidence_ids=[],
+            rationale='Synthetic fixture for trash recovery.',
+        ),
+        expected_revision=before['revision'],
+        expected_ledger_revision=before['ledger_revision'],
+        request_id='trash-restart-history',
+    ))
+    before = server.workspace.view(cid)
+
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    server.shutdown()
+
+    restarted = LocalServer(Workspace(server.workspace.path), 0)
+    thread = threading.Thread(target=restarted.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, raw = _call(restarted, 'GET', '/api/trash')
+        assert status == 200
+        trash = json.loads(raw)['cases']
+        assert len(trash) == 1
+        assert trash[0]['case_id'] == cid
+        assert trash[0]['title'] == 'Contract case'
+
+        status, _, raw = _call(restarted, 'POST', '/api/case/restore',
+                               dict(trash_id=trash[0]['trash_id']))
+        assert status == 200, raw
+        assert json.loads(raw) == dict(case_id=cid, title='Contract case')
+
+        restored = restarted.workspace.view(cid)
+        assert restored == before
+        assert restored['state']['claims']['claim-trash-restart-history']['claim'] == (
+            'A saved interpretation survives recovery.'
+        )
+        assert json.loads(_call(restarted, 'GET', '/api/trash')[2])['cases'] == []
+    finally:
+        restarted.shutdown()
+        restarted.server_close()
+        thread.join(timeout=5)
+
+
 def test_restore_rejects_unknown_or_forged_trash_ids(server):
     status, _, raw = _call(server, 'POST', '/api/case/restore',
                            dict(trash_id='../anything'))

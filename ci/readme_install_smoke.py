@@ -2,11 +2,10 @@
 import hashlib
 import json
 import os
-import queue
 import subprocess
 import sys
 import tempfile
-import threading
+import time
 import zipfile
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit, urlunsplit
@@ -95,39 +94,64 @@ def main():
         assert restore_result["approval_granted"] is False
         assert hashlib.sha256(database.read_bytes()).digest() == original_digest
 
-        process = subprocess.Popen(
-            [
-                str(app_python),
-                "-m",
-                "dd_research_runtime.local_app",
-                "--workspace",
-                str(workspace),
-                "--port",
-                "0",
-                "--no-browser",
-            ],
-            cwd=source,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        ready = queue.Queue()
-        threading.Thread(
-            target=lambda: ready.put(process.stdout.readline()),
-            daemon=True,
-        ).start()
+        launch_log = root / "app-launch.log"
+        with launch_log.open("w", encoding="utf-8") as output:
+            process = subprocess.Popen(
+                [
+                    str(app_python),
+                    "-m",
+                    "dd_research_runtime.local_app",
+                    "--workspace",
+                    str(workspace),
+                    "--port",
+                    "0",
+                    "--no-browser",
+                ],
+                cwd=source,
+                stdout=output,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
         try:
-            try:
-                line = ready.get(timeout=30)
-            except queue.Empty as exc:
-                raise RuntimeError("The README app command did not start in 30 seconds.") from exc
             prefix = "Open your private local research workspace: "
-            if not line.startswith(prefix):
-                raise RuntimeError(
-                    "The README app command failed to start: " + process.stderr.read()
+            deadline = time.monotonic() + 60
+            line = ""
+            while time.monotonic() < deadline:
+                output_lines = launch_log.read_text(
+                    encoding="utf-8", errors="replace"
+                ).splitlines()
+                if output_lines:
+                    line = output_lines[0]
+                    break
+                if process.poll() is not None:
+                    break
+                time.sleep(0.1)
+            if not line:
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+                output_lines = launch_log.read_text(
+                    encoding="utf-8", errors="replace"
+                ).splitlines()
+                safe_output = "\n".join(
+                    "[private launch URL redacted]"
+                    if output.startswith(prefix)
+                    else output
+                    for output in output_lines
                 )
+                raise RuntimeError(
+                    "The README app command did not start within 60 seconds "
+                    f"(exit code {process.returncode}). App output: "
+                    f"{safe_output or 'no output'}"
+                )
+            if not line.startswith(prefix):
+                raise RuntimeError("The README app command failed to start: " + line)
             launch_url = line[len(prefix):].strip()
             parsed = urlsplit(launch_url)
             token = parse_qs(parsed.fragment)["token"][0]

@@ -8,9 +8,11 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
+from zipfile import ZipFile
 import pytest
 from dd_research_runtime.local_app import Workspace,Handler
 from dd_research_runtime import interface_backups as backups
+from dd_research_runtime.source_draft import DRAFT_FIELDS
 from test_local_app import create,request,source,FakeServer
 
 @pytest.fixture
@@ -34,6 +36,45 @@ def test_round_trip_preserves_exact_state_and_pending_human_gate(saved):
     meta=json.loads((w.path/result['case_id']/'case-info.json').read_text())
     assert meta['synthetic_only'] and meta['restored_checkpoint'] and not meta['synthetic_example']
     with pytest.raises(PermissionError):request(w,result['case_id'],'apply_gate',dict(gate_id='gate-pending',rationale='Still unapproved'))
+
+
+def test_checkpoint_excludes_local_library_drafts_and_shortlist(saved):
+    w,cid,_,_=saved
+    library=w.documents(cid)
+    document=library.save('interview.wav',b'RIFF'+b'\0'*4+b'WAVE'+b'\0'*8)
+    transcript=b'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nA local transcript passage.\n'
+    library.attach_transcript(document['id'],'interview.vtt',transcript)
+    draft=dict.fromkeys(DRAFT_FIELDS,'')|dict(title='Unfinished source',passage='Unfinished excerpt',synthetic=True)
+    saved_draft=w.source_draft(cid).write(0,draft)
+    lead=dict(url='https://example.org/candidate',title='Unreviewed source lead',publisher='Publisher')
+    w.shortlist(cid).change('keep',lead)
+    before=w.view(cid)
+    assert before['storage']['local_library_bytes']>0
+    assert before['storage']['drafts_bytes']>0
+    assert before['storage']['shortlist_bytes']>0
+
+    checkpoint,_=w.backup(cid,before['revision'])
+    with ZipFile(io.BytesIO(checkpoint)) as archive:
+        assert {member.filename for member in archive.infolist()}=={'manifest.json','research.sqlite'}
+    preview=w.inspect_backup(checkpoint)
+    result=w.restore_backup(checkpoint,preview['checkpoint_digest'])
+    restored=w.view(result['case_id'])
+    folder=w.path/result['case_id']
+    assert result['approval_granted'] is False
+    assert restored['state']==before['state']
+    assert restored['storage']['local_library_bytes']==0
+    assert restored['storage']['drafts_bytes']==0
+    assert restored['storage']['shortlist_bytes']==0
+    assert not (folder/'documents.sqlite').exists()
+    assert not (folder/'source-draft.sqlite').exists()
+    assert not (folder/'source-shortlist.sqlite').exists()
+
+    assert w.view(cid)==before
+    assert library.list()==[dict(id=document['id'],filename='interview.wav')]
+    assert library.search('local transcript passage')['total']==1
+    assert w.source_draft(cid).read()==saved_draft
+    assert w.shortlist(cid).read()==[lead]
+
 
 def test_inspection_does_not_publish_a_case(saved):
     w,cid,before,data=saved;paths=set(w.path.iterdir());w.inspect_backup(data)
