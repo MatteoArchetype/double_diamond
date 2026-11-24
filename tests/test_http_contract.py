@@ -5,6 +5,7 @@ routing, headers, content types and error mapping cannot regress unnoticed.
 """
 import http.client
 import json
+import os
 import threading
 import uuid
 import subprocess
@@ -208,6 +209,41 @@ def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
     assert restored['case_id'] == cid
     assert json.loads(_call(server, 'GET', '/api/cases')[2])[0]['case_id'] == cid
     assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
+
+
+def test_failed_trash_restore_move_leaves_case_intact(server, monkeypatch):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    trash_id = trash[0]['trash_id']
+    trash_folder = server.workspace.path / '.trash' / trash_id
+    destination = server.workspace.path / cid
+    files_before = {
+        item.relative_to(trash_folder): item.read_bytes()
+        for item in trash_folder.rglob('*') if item.is_file()
+    }
+
+    original_replace = os.replace
+
+    def fail_restore_move(source, target):
+        if source == trash_folder and target == destination:
+            raise OSError('simulated restore move failure')
+        return original_replace(source, target)
+
+    monkeypatch.setattr('dd_research_runtime.local_app.os.replace', fail_restore_move)
+    status, _, raw = _call(server, 'POST', '/api/case/restore', dict(trash_id=trash_id))
+
+    assert status == 400
+    assert b'simulated restore move failure' in raw
+    assert not destination.exists()
+    assert {
+        item.relative_to(trash_folder): item.read_bytes()
+        for item in trash_folder.rglob('*') if item.is_file()
+    } == files_before
+    assert json.loads(_call(server, 'GET', '/api/cases')[2]) == []
+    assert [item['trash_id'] for item in json.loads(_call(server, 'GET', '/api/trash')[2])['cases']] == [trash_id]
 
 
 def test_concurrent_trash_restore_requests_restore_only_once(server):
