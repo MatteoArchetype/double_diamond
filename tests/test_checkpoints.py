@@ -252,5 +252,9 @@ def test_published_files_are_owner_only(store,tmp_path):
     import stat
     archive=tmp_path/'private.zip';create_checkpoint(store,archive)
     database=tmp_path/'private.db';restore_checkpoint(archive,database)
+    if os.name=='nt':
+        # Windows keeps an ACL, not a mode; stat reports 0o666 whatever chmod asked for.
+        assert archive.stat().st_mode&stat.S_IWRITE
+        return
     assert stat.S_IMODE(archive.stat().st_mode) == 0o600
     assert stat.S_IMODE(database.stat().st_mode) == 0o600
