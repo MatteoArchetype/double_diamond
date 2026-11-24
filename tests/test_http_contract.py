@@ -7,6 +7,8 @@ import http.client
 import json
 import threading
 import uuid
+import subprocess
+import sys
 
 import pytest
 
@@ -69,6 +71,34 @@ def test_reads_need_the_launch_token_but_not_an_origin(server, token, origin, ex
     """Reads from a pasted link carry no Origin; writes do, and that is enforced below."""
     status, _, _ = _call(server, 'GET', '/api/cases', token=token, origin=origin)
     assert status == expected
+
+
+def test_diagnostics_cli_prints_json_and_exits(tmp_path):
+    result = subprocess.run(
+        [sys.executable, '-m', 'dd_research_runtime.local_app',
+         '--diagnostics', '--workspace', str(tmp_path / 'workspace')],
+        capture_output=True, text=True, timeout=20,
+    )
+    assert result.returncode == 0
+    report = json.loads(result.stdout)
+    assert report['status'] == 'healthy'
+    assert report['cases']['saved'] == 0
+    assert str(tmp_path) not in result.stdout
+
+
+def test_diagnostics_are_read_only_and_do_not_disclose_the_workspace_path(server):
+    cid = _create(server)
+    status, _, raw = _call(server, 'GET', '/api/diagnostics')
+    assert status == 200
+    result = json.loads(raw)
+    assert result['status'] == 'healthy'
+    assert result['cases']['saved'] == 1
+    assert result['cases']['unavailable'] == 0
+    assert result['workspace']['writable'] is True
+    assert result['workspace']['total_bytes'] > 0
+    assert 'workspace_path' not in result
+    assert str(server.workspace.path) not in raw.decode()
+    assert cid not in raw.decode()
 
 
 def test_foreign_host_header_is_refused(server):
@@ -154,6 +184,35 @@ def test_delete_requires_the_exact_title_and_moves_the_case_to_trash(server):
     trashed = list((server.workspace.path / '.trash').iterdir())
     assert len(trashed) == 1 and trashed[0].name.startswith(cid)
     assert (trashed[0] / 'research.sqlite').is_file()
+
+
+def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200
+
+    status, _, raw = _call(server, 'GET', '/api/trash')
+    assert status == 200
+    trash = json.loads(raw)['cases']
+    assert len(trash) == 1
+    assert trash[0]['case_id'] == cid
+    assert trash[0]['title'] == 'Contract case'
+
+    status, _, raw = _call(server, 'POST', '/api/case/restore',
+                           dict(trash_id=trash[0]['trash_id']))
+    assert status == 200
+    restored = json.loads(raw)
+    assert restored['case_id'] == cid
+    assert json.loads(_call(server, 'GET', '/api/cases')[2])[0]['case_id'] == cid
+    assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
+
+
+def test_restore_rejects_unknown_or_forged_trash_ids(server):
+    status, _, raw = _call(server, 'POST', '/api/case/restore',
+                           dict(trash_id='../anything'))
+    assert status == 400
+    assert b'Trash' in raw or b'trash' in raw
 
 
 def test_catalog_is_ordered_by_recent_activity(server):

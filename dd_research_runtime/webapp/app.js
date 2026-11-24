@@ -4,7 +4,7 @@ const params=new URLSearchParams(location.hash.slice(1));
 if(params.has('token')){sessionStorage.setItem('dd-token',params.get('token'));history.replaceState(null,'',location.pathname+location.search);}
 const token=sessionStorage.getItem('dd-token')||'';
 let unavailableCases=[];
-let cases=[],view=null,tab='Research',message='',error='',busy=false,creating=false,selectedReport=null;
+let cases=[],trashCases=[],diagnostics=null,trashOpen=false,view=null,tab='Research',message='',error='',busy=false,creating=false,selectedReport=null;
 const drafts=new Map();
 const assessmentDrafts=new Map();let renderedKey=null;
 let frameSeed=null;
@@ -40,7 +40,7 @@ function reconnectView(){let input;const form=node('form',{},node('label',{class
 function resetInspection(){inspectingVisit=null;visitReview=null;reviewPending=false;reviewGeneration++;}
 async function openVisit(id){if(busy)return;const generation=++reviewGeneration,cid=view.case_id,revision=view.revision;inspectingVisit=id;visitReview=null;reviewPending=true;tab='Research';error='';render();try{const result=await api('/api/visit?case='+cid+'&visit='+encodeURIComponent(id)+'&revision='+revision);if(generation===reviewGeneration&&view.case_id===cid&&view.revision===revision)visitReview=result;}catch(e){if(generation===reviewGeneration)error=e.message;}finally{if(generation===reviewGeneration){reviewPending=false;render();}}}
 async function load(cid){resetSourceContext();resetInspection();view=await api('/api/state?case='+encodeURIComponent(cid));if(frameSeed&&(frameSeed.case_id!==view.case_id||frameSeed.based_on_state_revision!==view.revision))frameSeed=null;if(!view.reports.some(r=>r.report_id===selectedReport))selectedReport=view.reports[0]?.report_id||null;}
-async function loadCatalog(){try{const catalog=await api('/api/catalog');cases=catalog.cases;unavailableCases=catalog.unavailable_cases;sessionLost=false;}catch(e){if(lostSession(e))sessionLost=true;throw e;}}
+async function loadCatalog(){try{const [catalog,trashed,health]=await Promise.all([api('/api/catalog'),api('/api/trash'),api('/api/diagnostics')]);cases=catalog.cases;unavailableCases=catalog.unavailable_cases;trashCases=trashed.cases;diagnostics=health;sessionLost=false;}catch(e){if(lostSession(e))sessionLost=true;throw e;}}
 async function refresh(){await loadCatalog();if(view)await load(view.case_id);render();}
 async function perform(action,data){
  if(busy)return;
@@ -81,7 +81,7 @@ async function copyReviewedFrame(){
 if(busy||!visitReview)return;const cid=view.case_id,revision=view.revision,source=visitReview.visit.visit_id;busy=true;error='';render();
 try{const draft=await api('/api/frame-draft?case='+cid+'&visit='+encodeURIComponent(source)+'&revision='+revision);if(view.case_id!==cid||view.revision!==revision)throw Error('This case changed. Refresh before preparing a draft.');frameSeed={...draft,case_id:cid};drafts.delete(cid+'/'+revision+'/Research/work');resetInspection();tab='Research';message='The earlier frame is copied into an unsaved draft. Review it and enter a fresh saving reason.';}
 catch(e){error=e.message;}finally{busy=false;render();}}
-async function choose(cid){busy=true;error='';message='';creating=false;restoring=false;render();try{await load(cid);tab='Research';history.replaceState(null,'','/?case='+cid);}catch(e){error=e.message;}finally{busy=false;render();}}
+async function choose(cid){busy=true;error='';message='';creating=false;restoring=false;trashOpen=false;render();try{await load(cid);tab='Research';history.replaceState(null,'','/?case='+cid);}catch(e){error=e.message;}finally{busy=false;render();}}
 async function createLearningExample(){
 if(busy)return;busy=true;error='';message='';render();
 try{const result=await api('/api/example',{kind:'synthetic_learning_example'});await loadCatalog();creating=false;await load(result.case_id);tab='Research';history.replaceState(null,'','/?case='+result.case_id);message='Synthetic learning case created. Its evidence and historical approvals are invented demonstrations, not real findings or human acceptance.';}
@@ -161,6 +161,7 @@ function openSources(){
 function openHome(){
  creating=false;
  restoring=false;
+ trashOpen=false;
  view=null;
  message='';
  error='';
@@ -217,25 +218,35 @@ function createForm(){
  return card('Start with a question',text('p','Start exploring in Discover. You can narrow the problem as you learn.','muted'),editor);
 }
 function sourceLeadCard(lead,prepare,action){
+ const details=[lead.publisher,lead.authors,lead.date,lead.type].filter(Boolean).join(' · ');
  return node('div',{class:'card subtle'},
   node('a',{href:lead.url,target:'_blank',rel:'noopener noreferrer'},lead.title),
-  text('p',lead.publisher,'muted small'),
+  text('p',details||'Bibliographic lead','muted small'),
   btn('Prepare for review',()=>prepare(lead)),action);
 }
 function sourceSearchPanel(prepareSource){
  const caseId=view.case_id;
  const saved=node('div');
  const savedStatus=node('p',{role:'status',class:'muted small'},'Opening saved sources…');
- let changing=false, changed=false;
+ let changing=false, changed=false, savedUrls=new Set(), searchLeads=[];
  const prepare=lead=>{
   savedStatus.textContent=prepareSource(lead)
    ?'Source details copied into the review form. Check the original and complete the review before saving.'
    :'The review form already contains a draft. Save or clear that draft before preparing another source.';
  };
+ const renderSearchLeads=()=>{
+  if(!results) return;
+  results.replaceChildren(...searchLeads.map(lead=>sourceLeadCard(lead,prepare,
+   savedUrls.has(lead.url)
+    ?tag('Saved for later')
+    :btn('Save for later',()=>change('keep',lead)))));
+ };
  const showSaved=leads=>{
+  savedUrls=new Set(leads.map(lead=>lead.url));
   saved.replaceChildren(...leads.map(lead=>sourceLeadCard(lead,prepare,
    btn('Remove saved source',()=>change('remove',{url:lead.url})))));
   if(!leads.length)saved.append(text('p','No sources saved for later yet.','muted small'));
+  renderSearchLeads();
  };
  const change=async(action,lead)=>{
   if(changing)return false;
@@ -276,21 +287,28 @@ function sourceSearchPanel(prepareSource){
  const query=field('Public search terms',{hint:'Try a few words from your question. Only the terms you enter here are sent to Crossref.'});
  query.input.id='public-search-terms';
  query.input.maxLength=300;
+ const fromDate=field('Published from',{type:'text',required:false,hint:'YYYY or YYYY-MM-DD'});
+ const toDate=field('Published through',{type:'text',required:false,hint:'YYYY or YYYY-MM-DD'});
+ const publicationType=field('Publication type',{type:'select',required:false,options:[
+  ['','Any type'],['journal-article','Journal article'],['proceedings-article','Conference proceeding'],
+  ['book-chapter','Book chapter'],['book','Book'],['report','Report'],['dataset','Dataset'],['dissertation','Dissertation']
+ ]});
  const status=node('p',{role:'status',class:'muted small'});
  const results=node('div');
- const search=form([query],async()=>{
+ const search=form([query,fromDate,toDate,publicationType],async()=>{
   const submit=search.querySelector('button');
   if(submit.disabled)return;
   submit.disabled=true;
   results.replaceChildren();
   status.textContent='Searching Crossref…';
   try{
-   const response=await api('/api/source-search',{query:query.get()});
+   const response=await api('/api/source-search',{
+    query:query.get(),from_date:fromDate.get().trim(),to_date:toDate.get().trim(),
+    publication_type:publicationType.get()
+   });
    status.textContent=response.results.length?'Publication leads. Open an original to check its relevance and context.':'No publications found. Try different terms or add a source you already have.';
-   for(const lead of response.results){
-    results.append(sourceLeadCard(lead,prepare,
-     btn('Save for later',()=>change('keep',lead))));
-   }
+   searchLeads=response.results;
+   renderSearchLeads();
   }catch(e){status.textContent=e.message;}
   finally{submit.disabled=false;}
  },'Search publications');
@@ -1271,11 +1289,14 @@ function reportCriterionCard(criterion,report,context,evaluations,current){
 function reportsView(){const main=node('div');main.append(card('What a research draft is for',text('p','A draft is a private snapshot of the current research: its evidence, reasoning, decisions and limits. Use it to review or share the research internally. Creating or downloading a draft never approves publication or makes a conclusion final.','muted')));if(view.state.workflow.status!=='active')main.append(card('Save a research draft',text('p','A report communicates the current findings, limits and decisions. It does not authorize publication.','muted'),btn('Create current draft',()=>perform('report',{rationale:'Operator requested a saved draft of this stopped research pass'}),'primary')));else main.append(card('Research is in progress',text('p','Stop or escalate this pass to create a saved report. Your evidence and phase records are already retained.','muted')));for(const r of view.reports){const report=view.state.outputs[r.report_id];const section=card('Research draft',node('div',{class:'tags'},tag(r.current?'Current research snapshot':'Historical / stale',!r.current)),value('Summary',report.workflow.records?.deliver?.summary||report.workflow.stopping_reason));if(report.decision_trace){const context=reportEvidenceContext(report);const evaluations=new Map((report.workflow.records?.deliver?.evaluations||[]).map(item=>[item.evaluation_id,item]));section.append(value('Selected alternative',report.workflow.records?.develop?.alternatives?.find(a=>a.alternative_id===report.decision_trace.selected_alternative_id)?.hypothesis||report.decision_trace.selected_alternative_id),value('Decision',readable(report.decision_trace.decision)));for(const criterion of report.decision_trace.criteria)section.append(reportCriterionCard(criterion,report,context,evaluations,r.current));}if(report.assessments?.length)section.append(assessmentsPanel(report.assessments,reportEvidenceContext(report),true));if(Object.keys(report.contradictions||{}).length)section.append(contradictionsPanel(report.contradictions,reportEvidenceContext(report),true));section.append(btn('Download readable draft',async()=>{try{const response=await fetch('/api/report?case='+view.case_id+'&report='+encodeURIComponent(r.report_id),{headers:{Authorization:'Bearer '+token}});if(!response.ok)throw Error('Report download failed');const url=URL.createObjectURL(await response.blob()),a=node('a',{href:url,download:'research-draft.md'});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){error=e.message;render();}}));main.append(section);}return main;}
 async function downloadBackup(){if(busy)return;busy=true;error='';message='';render();try{const response=await fetch('/api/checkpoint?case='+view.case_id+'&revision='+view.revision,{headers:{Authorization:'Bearer '+token}});if(!response.ok){const result=await response.json();throw Error(result.error||'Backup download failed');}const url=URL.createObjectURL(await response.blob()),link=node('a',{href:url,download:'research-checkpoint.zip'});link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message='Checkpoint downloaded. It contains plaintext research data; keep it somewhere private.';}catch(e){error=e.message;}finally{busy=false;render();}}
 async function renameCase(input){if(busy)return;busy=true;error='';message='';render();try{const result=await api('/api/case/rename',{case_id:view.case_id,title:input.value});message='Case renamed to “'+result.title+'”.';await refresh();}catch(e){error=e.message;}finally{busy=false;render();}}
-async function deleteCase(input){if(busy)return;busy=true;error='';message='';render();try{await api('/api/case/delete',{case_id:view.case_id,title:input.value});view=null;tab='Research';history.replaceState(null,'','/');await loadCatalog();message='Case moved to the workspace .trash folder. The files are still on this computer if you need them.';}catch(e){error=e.message;}finally{busy=false;render();}}
+async function deleteCase(input){if(busy)return;busy=true;error='';message='';render();try{await api('/api/case/delete',{case_id:view.case_id,title:input.value});view=null;trashOpen=false;tab='Research';history.replaceState(null,'','/');await loadCatalog();message='Case moved to the workspace trash. It remains recoverable from Trash.';}catch(e){error=e.message;}finally{busy=false;render();}}
+async function restoreCase(trashId){if(busy)return;busy=true;error='';message='';render();try{const result=await api('/api/case/restore',{trash_id:trashId});await loadCatalog();await load(result.case_id);trashOpen=false;tab='Research';history.replaceState(null,'','/?case='+result.case_id);message='Case restored to your saved research.';}catch(e){error=e.message;try{await loadCatalog();}catch(_){} }finally{busy=false;render();}}
 function caseSettingsPanel(){const title=field('Case title',{value:view.meta.title,hint:'Changing the title leaves the research record untouched.'}),confirm=field('Type the exact title to confirm',{hint:'The case is moved to .trash beside your cases, not erased.'});
  const save=node('button',{type:'button',class:'','data-reset-on-render':'',onClick:()=>renameCase(title.input)},'Save new title');
  const remove=node('button',{type:'button',class:'danger','data-reset-on-render':'',onClick:()=>deleteCase(confirm.input)},'Move this case to trash');
- return node('details',{class:'details case-settings'},node('summary',{},'Rename or remove this case'),text('p','Titles are labels; the evidence, decisions and history stay exactly as saved. Removing a case moves its folder into the workspace trash so it can be recovered by hand.','muted'),node('div',{class:'stack'},title.wrap,save,node('hr',{}),confirm.wrap,remove));}
+ return node('details',{class:'details case-settings'},node('summary',{},'Rename or remove this case'),text('p','Titles are labels; the evidence, decisions and history stay exactly as saved. Removing a case moves it to Trash, where it can be restored.','muted'),node('div',{class:'stack'},title.wrap,save,node('hr',{}),confirm.wrap,remove));}
+function trashPanel(){const panel=card('Trash',text('p','Restoring places the original case back in your saved research. It preserves the evidence and approval history exactly as saved.','muted'));if(!trashCases.length)panel.append(text('p','No trashed cases.','muted'));for(const item of trashCases){const row=node('div',{class:'card subtle'},text('h3',item.title),value('Saved phase',item.status==='unavailable'?readable(item.status):phaseNames[item.phase]+' · '+readable(item.status)));if(item.status==='unavailable')row.append(text('p','This case could not be verified. It was left unchanged in Trash.','notice'));else row.append(btn('Restore this case',()=>restoreCase(item.trash_id),'primary'));panel.append(row);}return panel;}
+function diagnosticsPanel(){if(!diagnostics)return null;const bytes=n=>typeof n==='number'?(n/1024/1024).toFixed(1)+' MiB':'Unavailable';return card('Workspace health',tag(readable(diagnostics.status),diagnostics.status==='degraded'),value('Saved cases',String(diagnostics.cases.saved)),value('Unavailable cases',String(diagnostics.cases.unavailable)),value('Trashed cases',String(diagnostics.cases.trashed)),value('Workspace storage',bytes(diagnostics.workspace.total_bytes)),value('Disk free',bytes(diagnostics.disk.free_bytes)),value('Write check',diagnostics.workspace.writable?'Writable':'Not writable'),value('Runtime',diagnostics.runtime.implementation+' '+diagnostics.runtime.python),btn('Download diagnostics',()=>{const blob=new Blob([JSON.stringify(diagnostics,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),link=node('a',{href:url,download:'double-diamond-diagnostics.json'});link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}));}
 function backupPanel(){return node('div',{},card('Back up this saved case',text('p','Download a verified checkpoint containing the saved research, source records, history and pending decisions. Unsaved form fields and other cases are not included.','muted'),text('p','The ZIP contains plaintext research data. Store it privately; a code release ZIP is not a research backup. Browser transfers are limited to 32 MiB.','notice'),btn('Download case checkpoint',()=>downloadBackup(),'primary'),btn('Restore a checkpoint as a separate case',()=>{restoring=true;creating=false;restoreFile=null;restorePreview=null;restoreConfirmed=false;render();}),text('p','Restoring creates a separate case and preserves historical records. It does not overwrite this case or approve anything new.','muted small')));}
 async function uploadCheckpoint(path,digest){if(!restoreFile||!restoreFile.size||restoreFile.size>32*1024*1024)throw Error('Choose a checkpoint ZIP no larger than 32 MiB.');const response=await fetch(path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/zip',...(digest?{'X-Checkpoint-SHA256':digest}:{})},body:await restoreFile.arrayBuffer()});const result=await response.json();if(!response.ok)throw Error(result.error||'Checkpoint request failed');return result;}
 async function inspectBackup(){if(busy)return;busy=true;error='';restorePreview=null;restoreConfirmed=false;render();try{restorePreview=await uploadCheckpoint('/api/checkpoint/inspect');}catch(e){error=e.message;}finally{busy=false;render();}}
@@ -1295,12 +1316,12 @@ function render(restoredEditor){
  app.replaceChildren();const brand=node('div',{class:'brand'},text('span','◇◇','diamonds'),node('div',{},'Double Diamond',text('div','Research workspace','muted small')));
 const navToggle=node('button',{class:'nav-toggle','aria-expanded':String(navOpen),'aria-controls':'case-nav','aria-label':'Show or hide your saved cases',onClick:()=>{navOpen=!navOpen;render();}},navOpen?'Hide cases':'Your research ('+cases.length+')');
 const side=node('aside',{class:'sidebar'},node('div',{class:'sidebar-head'},brand,navToggle),btn('+ New research case',openCreateForm,'primary'));
-if(navOpen){const nav=node('div',{class:'sidebar-nav',id:'case-nav'},btn('Workspace home',openHome),btn('Restore a backup',()=>{restoring=true;creating=false;error='';message='';render();}));
+if(navOpen){const nav=node('div',{class:'sidebar-nav',id:'case-nav'},btn('Workspace home',openHome),btn('Restore a backup',()=>{restoring=true;creating=false;trashOpen=false;error='';message='';render();}),btn('Trash ('+trashCases.length+')',()=>{trashOpen=true;creating=false;restoring=false;view=null;error='';message='';render();}));
  const list=node('div',{class:'case-list'},text('div','Your research · '+cases.length,'eyebrow')),empty=text('p','No saved case matches that filter.','muted small');empty.hidden=true;
  if(cases.length>8){const filter=node('input',{type:'search',placeholder:'Filter '+cases.length+' saved cases','aria-label':'Filter your research cases',class:'case-filter',onInput:()=>{const q=filter.value.trim().toLowerCase();let shown=0;for(const item of list.querySelectorAll('.case-button')){const match=!q||item.dataset.title.includes(q);item.hidden=!match;if(match)shown++;}empty.hidden=shown>0;}});list.append(filter);}
  for(const c of cases)list.append(btn(c.title,()=>choose(c.case_id),'case-button'+(view?.case_id===c.case_id?' active':''),{'data-title':c.title.toLowerCase()}));
  list.append(empty);nav.append(list,text('p','Local workspace. Your research is saved on this computer. Final host acceptance and external actions remain separate.','foot'));side.append(nav);}const main=node('main');main.append(node('div',{class:'topbar'},'A question → evidence → a research decision',btn('Refresh saved research',()=>refresh().catch(e=>{error=e.message;render();}))));if(error)main.append(text('div',error,'notice error'));if(message)main.append(text('div',message,'notice good'));if(unavailableCases.length)main.append(card('Some saved research could not be opened',text('p','The files for '+String(unavailableCases.length)+(unavailableCases.length===1?' saved case':' saved cases')+' could not be verified and were left unchanged. Your other cases remain available.','notice'),...unavailableCases.map(c=>value('Unavailable case',c.title)),text('p','Keep the original files for inspection. If you have a trusted checkpoint, use Restore a backup to create a separate copy. Nothing is repaired or deleted automatically.','muted small')));if(busy)main.append(text('div','Saving or opening verified research…','notice'));
-if(restoring)main.append(restorePanel());else if(creating)main.append(createForm());else if(!view){
+if(restoring)main.append(restorePanel());else if(creating)main.append(createForm());else if(trashOpen)main.append(trashPanel());else if(!view){
  main.append(
   node('div',{class:'hero'},node('div',{class:'eyebrow'},'A guided research workspace'),node('h1',{id:'workspace-home-title'},'Turn a question into a traceable research decision.'),
    text('p','Gather evidence, understand what it supports, compare possible directions, and make your reasoning visible from start to finish.')),
@@ -1309,6 +1330,7 @@ if(restoring)main.append(restorePanel());else if(creating)main.append(createForm
    node('div',{class:'choice'},text('h3','2. Review evidence'),text('p','Save exact passages from sources and check their original context before using them.')),
    node('div',{class:'choice'},text('h3','3. Decide carefully'),text('p','Use the Double Diamond phases to frame the problem, compare alternatives, and record the limits of your decision.')))),
   card('How the Double Diamond guides the work',text('p','Discover and Define help you explore widely before framing the problem. Develop and Deliver help you compare possible directions before deciding what to do next. If new evidence changes the picture, you can request a reviewed return to an earlier phase.','muted')),
+   ...[diagnosticsPanel()].filter(Boolean),
   node('div',{class:'phase-strip'},...phases.map(p=>node('div',{class:'card subtle'},text('h3',phaseNames[p]),text('p',names[p],'small')))),
   card('Start your research',text('p','Create a case around your own question. Your first task will be to add one source and review a passage from it.','muted'),btn('Start a research case',openCreateForm,'primary')),
   card('Explore a completed example',text('p','Open a local practice copy to inspect how evidence, choices, and limits are recorded across the four phases. It uses invented evidence and simulated decisions.','muted'),

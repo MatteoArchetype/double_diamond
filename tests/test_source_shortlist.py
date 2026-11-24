@@ -59,6 +59,15 @@ def test_manual_web_source_preserves_locator_and_remains_a_lead(tmp_path):
     assert shortlist.change('remove', {'url': url}) == []
 
 
+def test_search_metadata_is_retained_in_the_saved_lead(tmp_path):
+    workspace = Workspace(tmp_path)
+    cid = create(workspace)
+    shortlist = workspace.shortlist(cid)
+    candidate = dict(lead(), authors='Ada Example', date='2025-06-12', type='journal-article')
+    assert shortlist.change('keep', candidate) == [candidate]
+    assert Workspace(tmp_path).shortlist(cid).read() == [candidate]
+
+
 @pytest.mark.parametrize('url', [
     'https://reader:secret@example.org/report',
     'https://example.org\\@other.example/report',

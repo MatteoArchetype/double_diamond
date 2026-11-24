@@ -90,6 +90,14 @@ Each installation creates a `research-workspace` folder beside the application, 
 
 The workspace can create case checkpoints for the research record. Uploaded originals and attached transcripts remain in the local file library and are not included in those checkpoints.
 
+To print an operator-safe workspace health summary without opening the browser, run:
+
+```sh
+python3 -m dd_research_runtime.local_app --diagnostics --workspace /path/to/research-workspace
+```
+
+The summary includes case counts, workspace writability and storage usage. It does not include case titles, research content, absolute workspace paths or private launch tokens. The same summary can be downloaded from the Workspace home page.
+
 ## Run the tests
 
 Use the same Python environment to install the test requirements and run the suite.

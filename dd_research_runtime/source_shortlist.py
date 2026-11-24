@@ -41,9 +41,18 @@ class SourceShortlist:
         self.path = path
 
     def _rows(self, db):
-        return [dict(row) for row in db.execute(
-            'SELECT url, title, publisher FROM leads ORDER BY rowid'
-        )]
+        rows=[]
+        columns={row[1] for row in db.execute('PRAGMA table_info(leads)')}
+        extras=[name for name in ('authors','date','type') if name in columns]
+        select=['url','title','publisher']+[name for name in extras]
+        for row in db.execute('SELECT '+', '.join(select)+' FROM leads ORDER BY rowid'):
+            lead=dict(row)
+            for name in ('authors','date','type'):
+                if lead.get(name):
+                    continue
+                lead.pop(name)
+            rows.append(lead)
+        return rows
 
     def read(self):
         if not self.path.exists():
@@ -56,12 +65,18 @@ class SourceShortlist:
 
     def change(self, action, lead):
         if action == 'keep':
-            _keys(lead, {'url', 'title', 'publisher'})
+            _keys(lead, {'url', 'title', 'publisher'}, {'authors','date','type'})
             title, publisher = lead['title'], lead['publisher']
             if not isinstance(title, str) or not 1 <= len(title.strip()) <= 500:
                 raise ValueError('A source title is required.')
             if not isinstance(publisher, str) or len(publisher) > 300:
                 raise ValueError('Invalid publisher.')
+            for name in ('authors','date','type'):
+                if name in lead and not isinstance(lead[name],str):
+                    raise ValueError('Invalid source metadata.')
+            authors=lead.get('authors','')[:500]
+            date=lead.get('date','')[:20]
+            publication_type=lead.get('type','')[:100]
         elif action == 'remove':
             _keys(lead, {'url'})
         else:
@@ -72,11 +87,16 @@ class SourceShortlist:
             with db:
                 db.execute('BEGIN IMMEDIATE')
                 db.execute('CREATE TABLE IF NOT EXISTS leads (url TEXT UNIQUE, title TEXT, publisher TEXT)')
+                columns={row[1] for row in db.execute('PRAGMA table_info(leads)')}
+                for name,kind in (('authors','TEXT'),('date','TEXT'),('type','TEXT')):
+                    if name not in columns:
+                        db.execute(f'ALTER TABLE leads ADD COLUMN {name} {kind}')
                 if action == 'keep':
                     if not db.execute('SELECT 1 FROM leads WHERE url = ?', (url,)).fetchone():
                         if db.execute('SELECT COUNT(*) FROM leads').fetchone()[0] >= MAX_LEADS:
                             raise ValueError('This shortlist is full. Remove a lead before adding another.')
-                        db.execute('INSERT INTO leads VALUES (?, ?, ?)', (url, title.strip(), publisher.strip()))
+                        db.execute('INSERT INTO leads (url,title,publisher,authors,date,type) VALUES (?, ?, ?, ?, ?, ?)',
+                                   (url,title.strip(),publisher.strip(),authors,date,publication_type))
                 else:
                     db.execute('DELETE FROM leads WHERE url = ?', (url,))
                 return self._rows(db)
