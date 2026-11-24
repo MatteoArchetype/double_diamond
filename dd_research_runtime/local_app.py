@@ -251,9 +251,13 @@ class Workspace:
                                    revision=revision,ledger_revision=ledger_revision,
                                    deleted_at=int(folder.stat().st_mtime)))
             except (OSError,ValueError,KeyError,TypeError,RuntimeError,sqlite3.Error,ResearchInvariantError):
+                try:
+                    deleted_at=int(folder.stat().st_mtime)
+                except FileNotFoundError:
+                    continue
                 result.append(dict(trash_id=name,case_id=cid,title='Unavailable trashed case',
                                    synthetic_example=False,phase='unknown',status='unavailable',
-                                   revision=0,ledger_revision=0,deleted_at=int(folder.stat().st_mtime)))
+                                   revision=0,ledger_revision=0,deleted_at=deleted_at))
         return result
 
     def restore_trashed(self,trash_id):
