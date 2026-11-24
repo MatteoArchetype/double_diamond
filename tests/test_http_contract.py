@@ -164,3 +164,12 @@ def test_catalog_is_ordered_by_recent_activity(server):
     assert [case['case_id'] for case in cases][0] == second
     assert all(isinstance(case['updated_at'], int) for case in cases)
     assert {first, second} == {case['case_id'] for case in cases}
+
+
+def test_served_file_types_do_not_come_from_the_platform():
+    """Windows has no mime database; every served name is mapped explicitly."""
+    from dd_research_runtime import local_app
+    assert local_app.content_type('report.docx').endswith('wordprocessingml.document')
+    assert local_app.content_type('app.js').startswith('text/javascript')
+    assert local_app.content_type('REPORT.PDF') == 'application/pdf'
+    assert local_app.content_type('unknown.zzz') == 'application/octet-stream'

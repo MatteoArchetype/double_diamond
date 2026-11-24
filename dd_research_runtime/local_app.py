@@ -28,6 +28,15 @@ from .document_library import DocumentLibrary
 from .reporting import report_is_current,render_markdown
 
 ACTOR='local-operator'
+# Windows has no mime database, so guess_type falls back to octet-stream for files the
+# app itself writes and serves. These names are fixed, so name them explicitly.
+CONTENT_TYPES={'.css':'text/css; charset=utf-8','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+               '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json',
+               '.md':'text/markdown; charset=utf-8','.pdf':'application/pdf','.png':'image/png','.svg':'image/svg+xml',
+               '.txt':'text/plain; charset=utf-8','.zip':'application/zip'}
+def content_type(name):
+    """Serve a known file with its real type instead of asking the platform."""
+    return CONTENT_TYPES.get(Path(name).suffix.lower()) or mimetypes.guess_type(name)[0] or 'application/octet-stream'
 CAPABILITIES={'workflow_write','analysis_write','evidence_ingest','gate_propose','gate_decide'}
 ASSETS=Path(__file__).parent/'webapp'
 # Anchored to the application folder so cases do not seem to vanish when the app is launched from another directory.
@@ -412,7 +421,7 @@ class Handler(BaseHTTPRequestHandler):
                 library=self.server.workspace.documents(query.get('case',[''])[0])
                 filename,data=library.original(query.get('document',[''])[0])
                 disposition="attachment; filename=source; filename*=UTF-8''"+quote(filename,safe='')
-                return self._reply(200,data,mimetypes.guess_type(filename)[0] or 'application/octet-stream',
+                return self._reply(200,data,content_type(filename),
                                    {'Content-Disposition':disposition})
             if path.path=='/api/documents':
                 query=parse_qs(path.query,keep_blank_values=True)
@@ -463,7 +472,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._reply(200,self.server.workspace.report(cid,rid),'text/markdown; charset=utf-8')
             assets={'/':'index.html','/app.js':'app.js','/style.css':'style.css','/visit-panels.js':'visit-panels.js'}
             if path.path not in assets:return self._reply(404,dict(error='Not found'))
-            asset=ASSETS/assets[path.path];return self._reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
+            asset=ASSETS/assets[path.path];return self._reply(200,asset.read_bytes(),content_type(asset.name))
         except (PermissionError,ValueError,KeyError,TypeError,OSError,RuntimeError,sqlite3.Error,ResearchInvariantError) as exc:self._reply(403 if isinstance(exc,PermissionError) else 409 if isinstance(exc,RuntimeError) else 400,dict(error=str(exc)))
 
     def do_POST(self):

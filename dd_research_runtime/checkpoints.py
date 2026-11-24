@@ -73,7 +73,10 @@ def _destination(path):
 
 def _publish(staged,destination,fault):
     os.chmod(staged,0o600)
-    with open(staged,'rb') as source:os.fsync(source.fileno())
+    # Windows flushes only a handle opened for writing; a read-only handle raises EBADF.
+    descriptor=os.open(staged,os.O_RDWR)
+    try:os.fsync(descriptor)
+    finally:os.close(descriptor)
     if fault is not None:fault('before_publish')
     os.link(staged,destination) # Atomic exclusive publication; never replace an existing path.
     if fault is not None:fault('after_publish')
