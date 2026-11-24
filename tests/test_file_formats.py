@@ -8,7 +8,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from dd_research_runtime.file_preview import preview_file
 from dd_research_runtime.local_app import Workspace
-from test_local_app import create, request
+from test_local_app import create, request, research_view_unchanged
 
 TRANSCRIPT = b'WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nExample recorded words.\n\n00:00:04.000 --> 00:00:05.000\nMore context.\n'
 
@@ -47,7 +47,7 @@ def test_formats_reopen_search_and_retain_locators(tmp_path, name, data, locatio
     assert reopened.original(saved['id']) == (name, data)
     assert reopened.context(saved['id'], 1)['location'] == location
     assert reopened.search('Example')['total'] >= 1
-    assert workspace.view(cid) == before
+    assert research_view_unchanged(workspace, cid, before)
 
 
 def test_recording_transcript_concurrency_integrity_and_review(tmp_path):

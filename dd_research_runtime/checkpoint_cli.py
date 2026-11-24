@@ -32,9 +32,11 @@ def _parser():
     inspect.add_argument('checkpoint')
     restore=commands.add_parser('restore',help='Restore a verified checkpoint to a new database path.')
     restore.add_argument('checkpoint');restore.add_argument('destination')
+    restore_case=commands.add_parser('restore-case',help='Restore a verified case into an existing browser workspace, without the browser transfer limit.')
+    restore_case.add_argument('checkpoint');restore_case.add_argument('workspace')
     verify=commands.add_parser('verify',help='Verify an existing database without migration or repair.')
     verify.add_argument('database')
-    for command in (create,inspect,restore,verify):
+    for command in (create,inspect,restore,restore_case,verify):
         command.add_argument('--pretty',action='store_true',help='Indent JSON output.')
     return parser
 
@@ -48,6 +50,9 @@ def main(argv=None):
             result=dict(manifest=inspect_checkpoint(args.checkpoint))
         elif args.command == 'restore':
             result=dict(manifest=restore_checkpoint(args.checkpoint,args.destination))
+        elif args.command == 'restore-case':
+            from .interface_backups import restore_checkpoint_to_workspace
+            result=restore_checkpoint_to_workspace(args.checkpoint,args.workspace)
         else:
             result=dict(summary=verify_database(args.database))
         _write(dict(ok=True,command=args.command,**result),sys.stdout,args.pretty)

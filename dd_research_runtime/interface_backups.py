@@ -73,6 +73,35 @@ def restore_upload(workspace,data,*,expected_digest,_fault=None):
         return dict(case_id=cid,restored_checkpoint=True,approval_granted=False,checkpoint_digest=digest)
 
 
+def restore_checkpoint_to_workspace(checkpoint,workspace):
+    """Restore a checkpoint directly into a workspace without the browser transfer cap."""
+    workspace=Path(workspace).absolute()
+    if not workspace.is_dir() or workspace.is_symlink():raise ValueError('invalid restore workspace')
+    with tempfile.TemporaryDirectory(prefix='.restore-',dir=workspace) as temp:
+        folder=Path(temp)/'case';folder.mkdir(mode=0o700)
+        database=folder/'research.sqlite'
+        restore_checkpoint(checkpoint,database)
+        state,sr,lr,_=_read_state(database)
+        workflow=getattr(state,'workflow',{})
+        if workflow.get('workflow_version')!=3:
+            raise ValueError('Only criterion-linked Double Diamond cases can be restored into the browser workspace.')
+        title=state.research_id if isinstance(state.research_id,str) and state.research_id.strip() else 'Research case'
+        synthetic=sum(e.get('synthetic') is True for e in state.evidence.values())
+        digest=hashlib.sha256()
+        with open(checkpoint,'rb') as source:
+            for chunk in iter(lambda:source.read(1024*1024),b''):digest.update(chunk)
+        cid=uuid.uuid4().hex;destination=workspace/cid
+        reservation=case_publish.reserve(workspace,cid)
+        metadata=dict(title='Restored · '+title[:180],synthetic_example=False,
+                      restored_checkpoint=True,
+                      synthetic_only=synthetic>0 and synthetic==len(state.evidence),
+                      checkpoint_digest=digest.hexdigest())
+        meta=folder/'case-info.json';meta.write_text(_encode(metadata));os.chmod(meta,0o600)
+        case_publish.publish(folder,destination,reservation)
+        return dict(case_id=cid,restored_checkpoint=True,approval_granted=False,
+                    checkpoint_digest=digest.hexdigest(),state_revision=sr,ledger_revision=lr)
+
+
 def download_checkpoint(database,*,expected_revision):
     if type(expected_revision) is not int or expected_revision<0:raise ValueError('A current case revision is required.')
     with tempfile.TemporaryDirectory(prefix='dd-ui-backup-') as temp:

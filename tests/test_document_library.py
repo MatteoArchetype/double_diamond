@@ -5,7 +5,7 @@ import pytest
 
 from dd_research_runtime.local_app import Workspace
 from test_document_preview import PROPERTIES, WORD_BODY, word_bytes
-from test_local_app import create
+from test_local_app import create, research_view_unchanged
 
 
 def test_document_survives_reopen_without_changing_evidence(tmp_path):
@@ -21,7 +21,7 @@ def test_document_survives_reopen_without_changing_evidence(tmp_path):
     assert workspace.documents(other).list() == []
     with pytest.raises(ValueError, match='not found'):
         workspace.documents(other).preview(result['id'])
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
 
 
 def test_concurrent_duplicate_uploads_keep_one_original(tmp_path):
@@ -66,7 +66,7 @@ def test_search_finds_case_local_paragraphs_with_source_details(tmp_path):
     assert result['matches'][0]['number'] == 1
     assert result['matches'][0]['metadata'] == first['metadata']
     assert result['incomplete'] == []
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
 
 
 def test_search_caps_results_and_reports_unavailable_documents(tmp_path):
@@ -125,7 +125,7 @@ def test_passage_context_preserves_numbers_and_is_case_local(tmp_path):
         library.context(saved['id'], 2)
     with pytest.raises(ValueError, match='not found'):
         workspace.documents(other).context(saved['id'], 1)
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
 
 
 def test_passage_context_is_bounded_and_checks_integrity(tmp_path):
@@ -158,7 +158,7 @@ def test_approve_local_paragraph_retains_provenance_and_context(tmp_path):
         request(workspace, case, 'document_source', dict(data, passage='Altered text'))
     with pytest.raises(ValueError, match='not found'):
         request(workspace, other, 'document_source', data)
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
     request(workspace, case, 'document_source', data, request_id='file-review')
     view = workspace.view(case)
     assert view['ledger_revision'] == 1 and view['state']['workflow']['phase'] == 'discover'

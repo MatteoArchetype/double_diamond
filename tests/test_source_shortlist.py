@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from dd_research_runtime.local_app import Workspace
-from test_local_app import create
+from test_local_app import create, research_view_unchanged
 
 
 def lead(suffix='first'):
@@ -23,7 +23,7 @@ def test_shortlist_is_case_local_durable_and_separate_from_evidence(tmp_path):
     reopened = Workspace(tmp_path).shortlist(case)
     assert reopened.read() == [lead()]
     assert workspace.shortlist(other).read() == []
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
     assert reopened.change('remove', {'url': lead()['url']}) == []
 
 
@@ -55,7 +55,7 @@ def test_manual_web_source_preserves_locator_and_remains_a_lead(tmp_path):
     assert shortlist.change('keep', dict(candidate, url=url.replace('example.org', 'EXAMPLE.ORG'))) == [candidate]
     assert shortlist.change('keep', candidate) == [candidate]
     assert Workspace(tmp_path).shortlist(case).read() == [candidate]
-    assert workspace.view(case) == before
+    assert research_view_unchanged(workspace, case, before)
     assert shortlist.change('remove', {'url': url}) == []
 
 

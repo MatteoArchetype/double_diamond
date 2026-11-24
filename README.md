@@ -88,7 +88,23 @@ On macOS, once the installation steps above are done, you can instead double-cli
 
 Each installation creates a `research-workspace` folder beside the application, wherever you launch it from. It holds your research cases and the application’s local records. To keep them somewhere else, start the app with `--workspace /path/to/folder`. Keep the private link printed at launch to yourself while the workspace is running.
 
-The workspace can create case checkpoints for the research record. Uploaded originals and attached transcripts remain in the local file library and are not included in those checkpoints.
+The workspace can create case checkpoints for the research record. Uploaded originals and attached transcripts, unsaved drafts, and saved source leads remain local and are not included. The Backups tab shows each case's on-disk size by category and the size of the research database included in its checkpoint.
+
+Browser checkpoint transfers are limited to 32 MiB. For larger checkpoints, run the checkpoint CLI from the application folder. Replace `<workspace>` with the workspace path, `<case-id>` with the saved case's ID, and `<checkpoint.zip>` with a new file path. On macOS and Linux:
+
+```sh
+.venv/bin/python -m dd_research_runtime.checkpoint_cli create "<workspace>/<case-id>/research.sqlite" "<checkpoint.zip>"
+.venv/bin/python -m dd_research_runtime.checkpoint_cli restore-case "<checkpoint.zip>" "<workspace>"
+```
+
+On Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m dd_research_runtime.checkpoint_cli create "<workspace>\<case-id>\research.sqlite" "<checkpoint.zip>"
+.\.venv\Scripts\python.exe -m dd_research_runtime.checkpoint_cli restore-case "<checkpoint.zip>" "<workspace>"
+```
+
+`restore-case` verifies the checkpoint and adds it to the existing browser workspace as a separate case. It does not replace existing cases or renew historical approvals. Checkpoints contain plaintext research data; keep them private.
 
 To print an operator-safe workspace health summary without opening the browser, run:
 

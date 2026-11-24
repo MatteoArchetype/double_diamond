@@ -143,6 +143,29 @@ class Workspace:
     def documents(self,cid):
         return DocumentLibrary(self.case_path(cid)/'documents.sqlite')
 
+    def case_storage(self,cid):
+        """Report case file sizes without following links or opening research files."""
+        folder=self.case_path(cid)
+        sizes=dict(research_database_bytes=0,local_library_bytes=0,drafts_bytes=0,
+                   shortlist_bytes=0,other_bytes=0)
+        for item in folder.iterdir():
+            if item.is_symlink() or not item.is_file():continue
+            size=item.stat().st_size
+            name=item.name
+            if name=='research.sqlite' or name.startswith('research.sqlite-'):
+                key='research_database_bytes'
+            elif name=='documents.sqlite' or name.startswith('documents.sqlite-'):
+                key='local_library_bytes'
+            elif name=='source-draft.sqlite' or '-draft-' in name and name.endswith('.sqlite'):
+                key='drafts_bytes'
+            elif name=='source-shortlist.sqlite':
+                key='shortlist_bytes'
+            else:
+                key='other_bytes'
+            sizes[key]+=size
+        sizes['total_bytes']=sum(sizes.values())
+        return sizes
+
     def catalog(self):
         """Inspect candidate cases without constructors, adoption, migration or repair."""
         from .interface_backups import _read_state
@@ -297,7 +320,7 @@ class Workspace:
         from .interface_guidance import build_guidance,research_gate_contexts
         from .analysis_transactions import assessment_is_current
         from assessment import DIMENSIONS
-        return dict(case_id=cid,meta=meta,gate_context_current=research_gate_contexts(state),guidance=build_guidance(state,synthetic_example=meta['synthetic_example']),revision=sr,ledger_revision=lr,state=state.snapshot(),currency=stage_currency(state),
+        return dict(case_id=cid,meta=meta,storage=self.case_storage(cid),gate_context_current=research_gate_contexts(state),guidance=build_guidance(state,synthetic_example=meta['synthetic_example']),revision=sr,ledger_revision=lr,state=state.snapshot(),currency=stage_currency(state),
                     reports=sorted([dict(report_id=rid,current=report_is_current(state,rid)) for rid in state.outputs if 'content_digest' in state.outputs[rid]],key=lambda r:(r['current'],state.outputs[r['report_id']].get('generated_at',''),r['report_id']),reverse=True),
                     agendas=[inspect_agenda(state,aid) for aid in getattr(state,'research_agendas',{})],
                     revisable_claim_ids=[key for key,claim in state.claims.items() if _advisory_revision_allowed(claim)],assessment_dimensions=list(DIMENSIONS),assessments=[dict(assessment=record,current=assessment_is_current(state,aid)) for aid,record in sorted(getattr(state,'assessments',{}).items())])

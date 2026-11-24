@@ -10,6 +10,7 @@ from test_persistent_ingestion import store,ingest
 from test_source_snapshots import snapshots
 from dd_research_runtime import checkpoint_cli
 from dd_research_runtime.checkpoints import create_checkpoint,verify_database,create_checkpoint_from_path,_ReadOnlySource
+from dd_research_runtime.local_app import Workspace
 from dd_research_runtime.persistent_ingestion import PersistentEvidenceStore
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -96,7 +97,7 @@ def test_usage_errors_have_stable_exit_and_json(args):
     failure(run_cli(*args),'usage',status=2)
 
 
-@pytest.mark.parametrize('args',[['--help'],['create','--help'],['inspect','--help'],['restore','--help'],['verify','--help']])
+@pytest.mark.parametrize('args',[['--help'],['create','--help'],['inspect','--help'],['restore','--help'],['restore-case','--help'],['verify','--help']])
 def test_help_requires_no_database(args):
     result=run_cli(*args)
     assert result.returncode == 0 and result.stderr == '' and 'usage:' in result.stdout
@@ -161,3 +162,23 @@ def test_library_path_creation_uses_readonly_source(store,tmp_path):
     manifest=create_checkpoint_from_path(store.ledger.path,tmp_path/'library.zip')
     assert manifest['summary'] == verify_database(store.ledger.path)
     assert Path(store.ledger.path).read_bytes() == original
+
+
+def test_restore_case_cli_publishes_separate_browser_case(tmp_path):
+    workspace=Workspace(tmp_path/'workspace')
+    original=workspace.create(dict(title='Original case',question='What remains unknown?',
+                                   scope='Test only',max_visits=8,max_alternatives=3))
+    original_database=workspace.path/original/'research.sqlite'
+    original_bytes=original_database.read_bytes()
+    archive=tmp_path/'research.zip'
+    success(run_cli('create',original_database,archive))
+
+    restored=success(run_cli('restore-case',archive,workspace.path))
+    assert restored['restored_checkpoint'] is True
+    assert restored['approval_granted'] is False
+    assert restored['case_id'] != original
+    assert original_database.read_bytes() == original_bytes
+    assert {item['case_id'] for item in workspace.cases()} == {original,restored['case_id']}
+    restored_view=workspace.view(restored['case_id'])
+    assert restored_view['meta']['restored_checkpoint'] is True
+    assert restored_view['state']['workflow']['workflow_version'] == 3

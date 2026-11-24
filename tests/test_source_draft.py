@@ -4,7 +4,7 @@ import pytest
 
 from dd_research_runtime.local_app import Workspace
 from dd_research_runtime.source_draft import DRAFT_FIELDS
-from test_local_app import create
+from test_local_app import create, research_view_unchanged
 
 
 def draft():
@@ -20,7 +20,7 @@ def test_source_draft_survives_reopen_without_approving_evidence(tmp_path):
     reopened=Workspace(tmp_path).source_draft(case)
     assert reopened.read()==saved
     assert workspace.source_draft(other).read()['draft'] is None
-    assert workspace.view(case)==before
+    assert research_view_unchanged(workspace,case,before)
     assert reopened.write(saved['version'],None)=={'version':2,'draft':None}
     assert reopened.read()=={'version':2,'draft':None}
 
@@ -54,7 +54,7 @@ def test_discover_draft_is_separate_and_bound_to_open_visit(tmp_path):
     saved=workspace.discover_draft(case,visit).write(0,data)
     assert Workspace(tmp_path).discover_draft(case,visit).read()==saved
     assert workspace.source_draft(case).read()['draft'] is None
-    assert workspace.view(case)==before
+    assert research_view_unchanged(workspace,case,before)
     with pytest.raises(RuntimeError,match='no longer open'):
         workspace.discover_draft(case,'V2')
     request(workspace,case,'phase_record',dict(
@@ -87,7 +87,7 @@ def test_define_draft_restores_frame_fields_without_record_or_gate(tmp_path):
               rationale='',claim_ids=[],uncertainty_ids=[])
     saved=workspace.define_draft(case,'V2').write(0,data)
     assert Workspace(tmp_path).define_draft(case,'V2').read()==saved
-    assert workspace.view(case)==before
+    assert research_view_unchanged(workspace,case,before)
     with pytest.raises(ValueError):
         workspace.define_draft(case,'V2').write(saved['version'],dict(data,approved=True))
     with pytest.raises(RuntimeError,match='no longer open'):
