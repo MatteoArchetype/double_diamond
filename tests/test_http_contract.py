@@ -352,6 +352,29 @@ def test_corrupt_trashed_case_cannot_be_restored_through_the_api(server):
     assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == unavailable
 
 
+def test_trashed_case_with_invalid_metadata_cannot_be_restored(server):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    trash_folder = server.workspace.path / '.trash' / trash[0]['trash_id']
+    (trash_folder / 'case-info.json').write_text('{')
+    trashed_files = {item.name: item.read_bytes() for item in trash_folder.iterdir()}
+
+    unavailable = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    assert len(unavailable) == 1
+    assert unavailable[0]['status'] == 'unavailable'
+
+    status, _, raw = _call(server, 'POST', '/api/case/restore',
+                           dict(trash_id=trash[0]['trash_id']))
+    assert status == 400
+    assert b'could not be verified' in raw
+    assert not (server.workspace.path / cid).exists()
+    assert {item.name: item.read_bytes() for item in trash_folder.iterdir()} == trashed_files
+    assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == unavailable
+
+
 def test_catalog_is_ordered_by_recent_activity(server):
     first = _create(server)
     second = _create(server)
