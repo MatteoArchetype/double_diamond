@@ -47,7 +47,7 @@ def test_extracts_only_explicit_source_details():
 @pytest.mark.parametrize('data', [
     b'not a document', word_bytes(b'<!DOCTYPE anything>' + PROPERTIES),
     word_bytes(b'x' * 65537), word_bytes(b'<broken'),
-])
+], ids=['text', 'doctype', 'oversized', 'broken'])
 def test_rejects_bad_or_oversized_properties(data):
     with pytest.raises(ValueError):
         preview_word_document(data)
@@ -94,7 +94,8 @@ def test_main_body_paragraphs_preserve_order_spacing_and_locators():
     assert result['passage_notice'] == ''
 
 
-@pytest.mark.parametrize('body', [b'<broken', b'x' * (1024 * 1024 + 1), b'<!DOCTYPE doc>' + WORD_BODY])
+@pytest.mark.parametrize('body', [b'<broken', b'x' * (1024 * 1024 + 1), b'<!DOCTYPE doc>' + WORD_BODY],
+                         ids=['broken', 'oversized', 'doctype'])
 def test_unavailable_body_preserves_metadata_preview(body):
     result = preview_word_document(word_bytes(PROPERTIES, body))
     assert result['metadata']['title'] == 'Urban heat methods'
