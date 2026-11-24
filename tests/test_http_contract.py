@@ -209,6 +209,36 @@ def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
     assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
 
 
+def test_trash_restore_refuses_to_overwrite_an_active_case(server, monkeypatch):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    trash_id = trash[0]['trash_id']
+    trash_folder = server.workspace.path / '.trash' / trash_id
+    trashed_files = {item.name: item.read_bytes() for item in trash_folder.iterdir()}
+
+    monkeypatch.setattr('dd_research_runtime.local_app._id', lambda: cid)
+    status, _, raw = _call(server, 'POST', '/api/cases', dict(
+        title='Replacement case',
+        question='What is the replacement?',
+        scope='Collision test only',
+        max_visits=8,
+        max_alternatives=3,
+    ))
+    assert status == 201, raw
+    active_before = server.workspace.view(cid)
+
+    status, _, raw = _call(server, 'POST', '/api/case/restore',
+                           dict(trash_id=trash_id))
+    assert status == 400
+    assert b'original identifier' in raw
+    assert server.workspace.view(cid) == active_before
+    assert {item.name: item.read_bytes() for item in trash_folder.iterdir()} == trashed_files
+    assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == trash
+
+
 def test_trashed_case_survives_workspace_restart_and_restores_history(server):
     cid = _create(server)
     library = server.workspace.documents(cid)
@@ -294,6 +324,32 @@ def test_restore_rejects_unknown_or_forged_trash_ids(server):
                            dict(trash_id='../anything'))
     assert status == 400
     assert b'Trash' in raw or b'trash' in raw
+
+
+def test_corrupt_trashed_case_cannot_be_restored_through_the_api(server):
+    cid = _create(server)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    trash_folder = server.workspace.path / '.trash' / trash[0]['trash_id']
+    database = trash_folder / 'research.sqlite'
+    database.write_bytes(b'not a valid research database')
+    trashed_files = {item.name: item.read_bytes() for item in trash_folder.iterdir()}
+
+    status, _, raw = _call(server, 'GET', '/api/trash')
+    assert status == 200
+    unavailable = json.loads(raw)['cases']
+    assert len(unavailable) == 1
+    assert unavailable[0]['status'] == 'unavailable'
+
+    status, _, raw = _call(server, 'POST', '/api/case/restore',
+                           dict(trash_id=trash[0]['trash_id']))
+    assert status == 400
+    assert b'could not be verified' in raw
+    assert not (server.workspace.path / cid).exists()
+    assert {item.name: item.read_bytes() for item in trash_folder.iterdir()} == trashed_files
+    assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == unavailable
 
 
 def test_catalog_is_ordered_by_recent_activity(server):

@@ -199,6 +199,15 @@ class Workspace:
         if not isinstance(meta,dict) or not isinstance(meta.get('title'),str) or not meta['title'].strip() or type(meta.get('synthetic_example')) is not bool:raise ValueError('invalid case metadata')
         return meta_path,meta
 
+    def _verified_trash_case(self,folder):
+        _,meta=self._read_meta(folder)
+        from .interface_backups import _read_state
+        state,revision,ledger_revision,_=_read_state(folder/'research.sqlite')
+        workflow=getattr(state,'workflow',{})
+        if not isinstance(workflow,dict) or workflow.get('workflow_version') not in {2,3}:
+            raise ValueError('unsupported trashed case workflow')
+        return meta,state,revision,ledger_revision
+
     def rename(self,cid,title):
         """Change the display title only; the research record is untouched."""
         _text(title,'title');title=title.strip()
@@ -234,9 +243,7 @@ class Workspace:
                     or any(c not in '0123456789abcdef' for c in cid)):
                 continue
             try:
-                _,meta=self._read_meta(folder)
-                from .interface_backups import _read_state
-                state,revision,ledger_revision,_=_read_state(folder/'research.sqlite')
+                meta,state,revision,ledger_revision=self._verified_trash_case(folder)
                 workflow=state.workflow
                 result.append(dict(trash_id=name,case_id=cid,title=meta['title'],
                                    synthetic_example=meta['synthetic_example'],
@@ -259,8 +266,10 @@ class Workspace:
         if folder.is_symlink() or not folder.is_dir():raise ValueError('Choose a case in the workspace trash.')
         destination=self.path/cid
         if destination.exists() or destination.is_symlink():raise ValueError('A case already uses the original identifier.')
-        meta_path,meta=self._read_meta(folder)
-        if meta_path.is_symlink():raise ValueError('unsupported case metadata link')
+        try:
+            meta,_,_,_=self._verified_trash_case(folder)
+        except (OSError,ValueError,KeyError,TypeError,RuntimeError,sqlite3.Error,ResearchInvariantError) as exc:
+            raise ValueError('This trashed case could not be verified and remains in Trash.') from exc
         os.replace(folder,destination)
         return dict(case_id=cid,title=meta['title'])
 
