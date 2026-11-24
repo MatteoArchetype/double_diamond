@@ -17,6 +17,24 @@ permissions:
   contents: read
 
 jobs:
+  browser:
+    name: Browser smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements-test.txt
+          python -m playwright install --with-deps chromium
+      - name: Run browser smoke tests
+        run: python -m pytest tests/test_browser_smoke.py -v
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

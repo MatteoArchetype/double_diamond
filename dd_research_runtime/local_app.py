@@ -11,6 +11,9 @@ import sqlite3
 import threading
 import uuid
 import webbrowser
+import shutil
+import platform
+import sys
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs,quote
@@ -59,6 +62,46 @@ class Workspace:
     def __init__(self,path):
         self.path=Path(path).absolute();self.path.mkdir(mode=0o700,parents=True,exist_ok=True)
         if self.path.is_symlink():raise ValueError('workspace must not be a symbolic link')
+
+    def diagnostics(self):
+        """Return a bounded, operator-safe workspace health summary."""
+        catalog=self.catalog()
+        trash=self.trash_catalog()
+        usable=False
+        probe=None
+        try:
+            with tempfile.NamedTemporaryFile(prefix='.diagnostic-',dir=self.path,delete=False) as handle:
+                probe=Path(handle.name)
+                handle.write(b'')
+                handle.flush()
+                os.fsync(handle.fileno())
+            probe.unlink()
+            usable=True
+        except (OSError,PermissionError):
+            if probe is not None:
+                try:probe.unlink()
+                except OSError:pass
+        total_bytes=0
+        for folder in self.path.rglob('*'):
+            try:
+                if folder.is_symlink():continue
+                if folder.is_file():total_bytes+=folder.stat().st_size
+            except OSError:
+                pass
+        try:
+            disk=shutil.disk_usage(self.path)
+            disk_status=dict(total_bytes=disk.total,free_bytes=disk.free)
+        except OSError:
+            disk_status=dict(total_bytes=None,free_bytes=None)
+        return dict(
+            status='degraded' if not usable or catalog['unavailable_cases'] else 'healthy',
+            workspace=dict(writable=usable,total_bytes=total_bytes),
+            cases=dict(saved=len(catalog['cases']),unavailable=len(catalog['unavailable_cases']),
+                       trashed=len(trash)),
+            disk=disk_status,
+            runtime=dict(platform=platform.platform(),python=sys.version.split()[0],
+                         implementation=platform.python_implementation()),
+        )
 
     def case_path(self,cid):
         if not isinstance(cid,str) or len(cid)!=32 or any(c not in '0123456789abcdef' for c in cid):raise ValueError('invalid case identifier')
@@ -155,6 +198,48 @@ class Workspace:
         target=trash/(cid+'-'+datetime.now().strftime('%Y%m%dT%H%M%S'))
         os.replace(folder,target)
         return dict(case_id=cid,title=meta['title'],moved_to=target.name)
+
+    def trash_catalog(self):
+        """List restorable cases without constructing or repairing them."""
+        trash=self.path/'.trash'
+        if not trash.exists():return []
+        result=[]
+        for folder in sorted(trash.iterdir(),reverse=True):
+            name=folder.name
+            cid=name[:32] if len(name)>=33 else ''
+            if (folder.is_symlink() or not folder.is_dir() or len(cid)!=32
+                    or any(c not in '0123456789abcdef' for c in cid)):
+                continue
+            try:
+                _,meta=self._read_meta(folder)
+                from .interface_backups import _read_state
+                state,revision,ledger_revision,_=_read_state(folder/'research.sqlite')
+                workflow=state.workflow
+                result.append(dict(trash_id=name,case_id=cid,title=meta['title'],
+                                   synthetic_example=meta['synthetic_example'],
+                                   phase=workflow.get('phase','brief'),status=workflow.get('status','active'),
+                                   revision=revision,ledger_revision=ledger_revision,
+                                   deleted_at=int(folder.stat().st_mtime)))
+            except (OSError,ValueError,KeyError,TypeError,RuntimeError,sqlite3.Error,ResearchInvariantError):
+                result.append(dict(trash_id=name,case_id=cid,title='Unavailable trashed case',
+                                   synthetic_example=False,phase='unknown',status='unavailable',
+                                   revision=0,ledger_revision=0,deleted_at=int(folder.stat().st_mtime)))
+        return result
+
+    def restore_trashed(self,trash_id):
+        """Restore a trashed case to its original identifier."""
+        if (not isinstance(trash_id,str) or len(trash_id)<34
+                or trash_id[32]!='-' or any(c not in '0123456789abcdef' for c in trash_id[:32])):
+            raise ValueError('Choose a case in the workspace trash.')
+        cid=trash_id[:32]
+        folder=self.path/'.trash'/trash_id
+        if folder.is_symlink() or not folder.is_dir():raise ValueError('Choose a case in the workspace trash.')
+        destination=self.path/cid
+        if destination.exists() or destination.is_symlink():raise ValueError('A case already uses the original identifier.')
+        meta_path,meta=self._read_meta(folder)
+        if meta_path.is_symlink():raise ValueError('unsupported case metadata link')
+        os.replace(folder,destination)
+        return dict(case_id=cid,title=meta['title'])
 
     def _publish_case(self,cid,folder,fault):
         """Expose an already verified staged case without replacing existing research."""
@@ -452,6 +537,8 @@ class Handler(BaseHTTPRequestHandler):
             if path.path=='/api/source-shortlist':
                 cid=parse_qs(path.query).get('case',[''])[0]
                 return self._reply(200,dict(leads=self.server.workspace.shortlist(cid).read()))
+            if path.path=='/api/trash':return self._reply(200,dict(cases=self.server.workspace.trash_catalog()))
+            if path.path=='/api/diagnostics':return self._reply(200,self.server.workspace.diagnostics())
             if path.path=='/api/catalog':return self._reply(200,self.server.workspace.catalog())
             if path.path=='/api/cases':return self._reply(200,self.server.workspace.cases())
             if path.path=='/api/state':return self._reply(200,self.server.workspace.view(parse_qs(path.query).get('case',[''])[0]))
@@ -536,8 +623,11 @@ class Handler(BaseHTTPRequestHandler):
                 draft=self.server.workspace.source_draft(body['case_id'])
                 return self._reply(200,draft.write(body['expected_version'],body['draft']))
             if path=='/api/source-search':
-                _keys(body,{'query'})
-                return self._reply(200,dict(results=search_publications(body['query'])))
+                _keys(body,{'query'},{'from_date','to_date','publication_type'})
+                return self._reply(200,dict(results=search_publications(
+                    body['query'],from_date=body.get('from_date',''),
+                    to_date=body.get('to_date',''),
+                    publication_type=body.get('publication_type',''))))
             if path=='/api/source-shortlist':
                 _keys(body,{'case_id','action','lead'})
                 leads=self.server.workspace.shortlist(body['case_id']).change(body['action'],body['lead'])
@@ -553,6 +643,9 @@ class Handler(BaseHTTPRequestHandler):
                 if path=='/api/case/delete':
                     _keys(body,{'case_id','title'})
                     return self._reply(200,self.server.workspace.delete(body['case_id'],body['title']))
+                if path=='/api/case/restore':
+                    _keys(body,{'trash_id'})
+                    return self._reply(200,self.server.workspace.restore_trashed(body['trash_id']))
                 if path=='/api/cases':return self._reply(201,dict(case_id=self.server.workspace.create(body)))
                 if path=='/api/action':
                     _keys(body,{'case_id','request'})
@@ -569,6 +662,8 @@ def _parse_args(argv=None):
     parser.add_argument('--port',type=int,default=0)
     parser.add_argument('--demo',action='store_true')
     parser.add_argument('--no-browser',action='store_true',help='Print the private link without opening it in your browser.')
+    parser.add_argument('--diagnostics',action='store_true',
+                        help='Print a local, operator-safe workspace health summary and exit.')
     return parser.parse_args(argv)
 
 
@@ -581,6 +676,9 @@ def _open_browser(url):
 def main(argv=None):
     args=_parse_args(argv)
     workspace=Workspace(args.workspace)
+    if args.diagnostics:
+        print(_encode(workspace.diagnostics()))
+        return
     if args.demo:workspace.demo()
     server=LocalServer(workspace,args.port)
     print('Open your private local research workspace: '+server.url,flush=True)
