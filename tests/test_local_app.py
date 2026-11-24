@@ -10,6 +10,9 @@ from test_research_agenda import prepare,item
 def workspace(tmp_path):return Workspace(tmp_path/'workspace')
 
 def create(w):return w.create(dict(title='Synthetic test',question='What remains unknown?',scope='Test only',max_visits=8,max_alternatives=3))
+def research_view_unchanged(w,cid,before):
+    current=w.view(cid)
+    return {key:value for key,value in current.items() if key!='storage'}=={key:value for key,value in before.items() if key!='storage'}
 def request(w,cid,action,data,**overrides):
     view=w.view(cid)
     body=dict(action=action,data=data,expected_revision=view['revision'],expected_ledger_revision=view['ledger_revision'],request_id=uuid.uuid4().hex)
@@ -24,6 +27,19 @@ def test_create_restart_and_boundaries(workspace):
     assert not view['state']['human_gates']
     assert workspace.cases()[0]['case_id']==cid
     assert not {'publication','host_acceptance','gate_execute'} & CAPABILITIES
+
+def test_case_storage_reports_checkpoint_and_excluded_files(workspace):
+    cid=create(workspace);folder=workspace.path/cid
+    files={'documents.sqlite':b'originals','documents.sqlite-wal':b'wal',
+           'source-draft.sqlite':b'source draft','define-draft-visit.sqlite':b'phase draft',
+           'source-shortlist.sqlite':b'shortlist'}
+    for name,data in files.items():(folder/name).write_bytes(data)
+    storage=workspace.view(cid)['storage']
+    assert storage['research_database_bytes']==(folder/'research.sqlite').stat().st_size
+    assert storage['local_library_bytes']==len(b'originals')+len(b'wal')
+    assert storage['drafts_bytes']==len(b'source draft')+len(b'phase draft')
+    assert storage['shortlist_bytes']==len(b'shortlist')
+    assert storage['total_bytes']==sum(storage[key] for key in storage if key!='total_bytes')
 
 @pytest.mark.parametrize('bad',['../research','A'*32,'','0'*32,None])
 def test_no_arbitrary_case_paths(workspace,bad):
