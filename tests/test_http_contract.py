@@ -13,6 +13,7 @@ import sys
 import pytest
 
 from dd_research_runtime.local_app import LocalServer, Workspace
+from dd_research_runtime.source_draft import DRAFT_FIELDS
 
 
 @pytest.fixture
@@ -210,7 +211,30 @@ def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
 
 def test_trashed_case_survives_workspace_restart_and_restores_history(server):
     cid = _create(server)
+    library = server.workspace.documents(cid)
+    document = library.save('interview.wav', b'RIFF' + b'\0' * 4 + b'WAVE' + b'\0' * 8)
+    library.attach_transcript(
+        document['id'],
+        'interview.vtt',
+        b'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nA local transcript passage.\n',
+    )
+    draft = dict.fromkeys(DRAFT_FIELDS, '') | {
+        'title': 'Unfinished source',
+        'passage': 'Unfinished excerpt',
+        'synthetic': True,
+    }
+    saved_draft = server.workspace.source_draft(cid).write(0, draft)
+    lead = dict(
+        url='https://example.org/candidate',
+        title='Unreviewed source lead',
+        publisher='Publisher',
+    )
+    server.workspace.shortlist(cid).change('keep', lead)
+
     before = server.workspace.view(cid)
+    assert before['storage']['local_library_bytes'] > 0
+    assert before['storage']['drafts_bytes'] > 0
+    assert before['storage']['shortlist_bytes'] > 0
     server.workspace.action(cid, dict(
         action='claim',
         data=dict(
@@ -251,6 +275,13 @@ def test_trashed_case_survives_workspace_restart_and_restores_history(server):
         assert restored['state']['claims']['claim-trash-restart-history']['claim'] == (
             'A saved interpretation survives recovery.'
         )
+        restored_library = restarted.workspace.documents(cid)
+        assert restored_library.list() == [
+            dict(id=document['id'], filename='interview.wav')
+        ]
+        assert restored_library.search('local transcript passage')['total'] == 1
+        assert restarted.workspace.source_draft(cid).read() == saved_draft
+        assert restarted.workspace.shortlist(cid).read() == [lead]
         assert json.loads(_call(restarted, 'GET', '/api/trash')[2])['cases'] == []
     finally:
         restarted.shutdown()
