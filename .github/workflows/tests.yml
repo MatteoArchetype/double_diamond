@@ -48,11 +48,10 @@ jobs:
           # Coverage is measured once, on the current interpreter.
           - { os: ubuntu-latest, python: "3.13", coverage: true, experimental: false }
           - { os: macos-latest, python: "3.13", experimental: false }
-          # Windows has not been run before. It reports results without blocking
-          # merges until it is known to pass; remove experimental once it does.
-          # Windows is slower here, and one module can block the whole session,
-          # so it runs one test module per process until it has a green run.
-          - { os: windows-latest, python: "3.13", experimental: true, timeout: 55, by_file: true }
+          # Windows is slower here and a single session can block on a child
+          # process, so it runs one module per process. It blocks merges: the
+          # suite passed on Windows only after four POSIX assumptions were fixed.
+          - { os: windows-latest, python: "3.13", experimental: false, timeout: 55, by_file: true }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
