@@ -29,6 +29,9 @@ include = ["dd_research_runtime*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# A hung test should fail with a traceback instead of burning the job timeout.
+# The Windows job previously sat for 30 minutes with no output at all.
+timeout = 180
 
 [tool.coverage.run]
 branch = true
