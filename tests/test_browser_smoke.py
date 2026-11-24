@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from dd_research_runtime import interface_backups
 from dd_research_runtime.local_app import LocalServer, Workspace
 
 
@@ -250,3 +251,36 @@ def test_oversized_checkpoint_shows_cli_guidance_without_upload(
     assert r".\.venv\Scripts\python.exe" in message
     assert requests == []
     assert browser_server.workspace.cases() == []
+
+
+def test_oversized_download_shows_case_specific_cli_guidance(
+    browser_page, browser_server, monkeypatch
+):
+    browser_page.wait_for_selector("#workspace-home-title")
+    browser_page.get_by_role("button", name="Start a research case").click()
+    browser_page.get_by_label("What do you want to understand?").fill(
+        "How might backup limits affect recovery?"
+    )
+    browser_page.get_by_label("Case name").fill("Oversized download smoke case")
+    browser_page.get_by_role("button", name="Start research").click()
+    browser_page.wait_for_selector("#research-case-title")
+
+    case_id = parse_qs(urlparse(browser_page.url).query)["case"][0]
+    before = browser_server.workspace.view(case_id)
+    monkeypatch.setattr(interface_backups, "MAX_TRANSFER_BYTES", 1)
+    downloads = []
+    browser_page.on("download", lambda download: downloads.append(download.suggested_filename))
+    browser_page.get_by_text("More research tools").click()
+    browser_page.get_by_role("button", name="Save a copy").click()
+    browser_page.get_by_role("button", name="Download case checkpoint").click()
+
+    error = browser_page.locator(".notice.error")
+    error.wait_for()
+    message = error.inner_text()
+    assert "browser 32 MiB limit" in message
+    assert ".venv/bin/python -m dd_research_runtime.checkpoint_cli create" in message
+    assert f"<workspace>/{case_id}/research.sqlite" in message
+    assert r".\.venv\Scripts\python.exe" in message
+    assert f"<workspace>\\{case_id}\\research.sqlite" in message
+    assert downloads == []
+    assert browser_server.workspace.view(case_id) == before
