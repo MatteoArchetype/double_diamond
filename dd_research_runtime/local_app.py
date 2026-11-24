@@ -14,6 +14,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs,quote
+from . import case_publish
 from .persistent_ingestion import PersistentEvidenceStore,_encode
 from .runtime import ResearchState,ResearchInvariantError
 from .analysis_transactions import _keys,_text,_ids
@@ -148,20 +149,11 @@ class Workspace:
 
     def _publish_case(self,cid,folder,fault):
         """Expose an already verified staged case without replacing existing research."""
-        destination=self.path/cid;published=False
         fault('before_reservation')
-        destination.mkdir(mode=0o700);reserved_inode=destination.stat().st_ino
-        try:
-            fault('before_publication')
-            if destination.is_symlink() or destination.stat().st_ino!=reserved_inode:raise ValueError('case reservation changed')
-            os.replace(folder,destination);published=True
-            fault('after_publication')
-            return cid
-        finally:
-            # An uncertain response after publication must retain the complete case.
-            if not published and destination.is_dir() and not destination.is_symlink() and destination.stat().st_ino==reserved_inode:
-                try:destination.rmdir()
-                except OSError:pass
+        reservation=case_publish.reserve(self.path,cid)
+        # An uncertain response after publication must retain the complete case.
+        case_publish.publish(folder,self.path/cid,reservation,fault=fault)
+        return cid
 
     def create(self,data,*,_fault=None):
         _keys(data,{'title','question','scope','max_visits','max_alternatives'})

@@ -92,5 +92,6 @@ def test_staged_case_is_not_listed_before_publication(tmp_path):
         seen.append(phase)
     cid=w.create(data(),_fault=inspect)
     assert seen==['after_initialize','after_workflow','before_reservation','before_publication','after_publication']
-    assert w.case_path(cid).stat().st_mode&0o777==0o700
-    assert (w.case_path(cid)/'case-info.json').stat().st_mode&0o777==0o600
+    if os.name!='nt':  # Windows has no POSIX modes; chmod only toggles read-only.
+        assert w.case_path(cid).stat().st_mode&0o777==0o700
+        assert (w.case_path(cid)/'case-info.json').stat().st_mode&0o777==0o600
