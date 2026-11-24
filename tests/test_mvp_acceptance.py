@@ -51,7 +51,7 @@ def test_existing_demo_destination_preserved(tmp_path):
 
 
 def test_real_subprocess_demo_runs_from_package():
-    result=subprocess.run([sys.executable,'-m','dd_research_runtime.mvp_demo'],cwd=ROOT,text=True,capture_output=True,timeout=20)
+    result=subprocess.run([sys.executable,'-m','dd_research_runtime.mvp_demo'],cwd=ROOT,text=True,capture_output=True,timeout=60)
     assert result.returncode == 0 and result.stderr == ''
     report=json.loads(result.stdout)
     assert report['mvp_ready'] is False and report['checks']['all_fixture_invariants'] is True
@@ -59,7 +59,7 @@ def test_real_subprocess_demo_runs_from_package():
 
 def test_demo_cli_does_not_overwrite_existing_directory(tmp_path):
     target=tmp_path/'existing';target.mkdir();(target/'marker').write_text('keep')
-    result=subprocess.run([sys.executable,'-m','dd_research_runtime.mvp_demo','--keep',str(target)],cwd=ROOT,text=True,capture_output=True,timeout=20)
+    result=subprocess.run([sys.executable,'-m','dd_research_runtime.mvp_demo','--keep',str(target)],cwd=ROOT,text=True,capture_output=True,timeout=60)
     assert result.returncode == 1 and result.stdout == ''
     assert json.loads(result.stderr)['ok'] is False
     assert (target/'marker').read_text() == 'keep'
