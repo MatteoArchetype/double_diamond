@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      modules:
+        description: Windows only - space separated test modules, blank runs them all
+        default: ""
+      cap:
+        description: Seconds one Windows module may take
+        default: "900"
 
 permissions:
   contents: read
@@ -59,7 +67,7 @@ jobs:
         run: python run_tests.py
       - name: Run the full suite, one module at a time
         if: ${{ matrix.by_file }}
-        run: python ci/suite_by_file.py
+        run: python ci/suite_by_file.py --cap ${{ inputs.cap || '900' }} ${{ inputs.modules }}
       - name: Run the full suite with coverage
         if: ${{ matrix.coverage }}
         run: python -m pytest --cov --cov-report=term-missing --cov-fail-under=88
