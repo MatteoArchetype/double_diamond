@@ -16,6 +16,7 @@ import pytest
 
 from dd_research_runtime import interface_backups
 from dd_research_runtime.local_app import LocalServer, Workspace
+from dd_research_runtime.source_draft import DRAFT_FIELDS
 
 
 pytest.importorskip("playwright.sync_api")
@@ -119,6 +120,28 @@ def test_case_checkpoint_can_be_downloaded_and_restored_separately(
     browser_page.wait_for_selector("#research-case-title")
 
     original_id = parse_qs(urlparse(browser_page.url).query)["case"][0]
+    library = browser_server.workspace.documents(original_id)
+    document = library.save(
+        "interview.wav", b"RIFF" + b"\0" * 4 + b"WAVE" + b"\0" * 8 + b"\0" * 262144
+    )
+    transcript = (
+        b"WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nA local transcript passage.\n"
+    )
+    library.attach_transcript(document["id"], "interview.vtt", transcript)
+    draft = dict.fromkeys(DRAFT_FIELDS, "") | {
+        "title": "Unfinished source",
+        "passage": "Unfinished excerpt",
+        "synthetic": True,
+    }
+    saved_draft = browser_server.workspace.source_draft(original_id).write(0, draft)
+    lead = dict(
+        url="https://example.org/candidate",
+        title="Unreviewed source lead",
+        publisher="Publisher",
+    )
+    browser_server.workspace.shortlist(original_id).change("keep", lead)
+    browser_page.get_by_role("button", name="Refresh saved research").click()
+
     original_before = browser_server.workspace.view(original_id)
     original_database = (
         browser_server.workspace.path / original_id / "research.sqlite"
@@ -134,6 +157,16 @@ def test_case_checkpoint_can_be_downloaded_and_restored_separately(
         "Saved source shortlist excluded",
     ):
         assert browser_page.get_by_text(label, exact=True).is_visible()
+    for label, key in (
+        ("Total files for this case", "total_bytes"),
+        ("Research database included in checkpoint", "research_database_bytes"),
+        ("Original files and transcripts excluded", "local_library_bytes"),
+        ("Unsaved drafts excluded", "drafts_bytes"),
+        ("Saved source shortlist excluded", "shortlist_bytes"),
+    ):
+        displayed = browser_page.locator(".label-value").filter(has_text=label)
+        expected = f"{original_before['storage'][key] / 1024 / 1024:.2f} MiB"
+        assert expected in displayed.inner_text()
 
     checkpoint = tmp_path / "browser-checkpoint.zip"
     with browser_page.expect_download() as download_event:
@@ -190,6 +223,9 @@ def test_case_checkpoint_can_be_downloaded_and_restored_separately(
     restored = browser_server.workspace.view(restored_id)
     assert restored["meta"]["restored_checkpoint"] is True
     assert restored["state"] == original_before["state"]
+    assert restored["storage"]["local_library_bytes"] == 0
+    assert restored["storage"]["drafts_bytes"] == 0
+    assert restored["storage"]["shortlist_bytes"] == 0
     assert restored["revision"] == restored_data["state_revision"]
     assert (restored["revision"], restored["ledger_revision"]) == (
         original_before["revision"],
@@ -197,6 +233,13 @@ def test_case_checkpoint_can_be_downloaded_and_restored_separately(
     )
     assert browser_server.workspace.view(original_id) == original_before
     assert hashlib.sha256(original_database.read_bytes()).digest() == original_digest
+    assert library.list() == [dict(id=document["id"], filename="interview.wav")]
+    assert library.search("local transcript passage")["total"] == 1
+    assert browser_server.workspace.source_draft(original_id).read() == saved_draft
+    assert browser_server.workspace.shortlist(original_id).read() == [lead]
+    assert not (browser_server.workspace.path / restored_id / "documents.sqlite").exists()
+    assert not (browser_server.workspace.path / restored_id / "source-draft.sqlite").exists()
+    assert not (browser_server.workspace.path / restored_id / "source-shortlist.sqlite").exists()
     assert {case["case_id"] for case in browser_server.workspace.cases()} == {
         original_id,
         restored_id,
