@@ -9,6 +9,7 @@ import threading
 import uuid
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -207,6 +208,30 @@ def test_trashed_case_is_listed_and_restored_to_the_original_identifier(server):
     assert restored['case_id'] == cid
     assert json.loads(_call(server, 'GET', '/api/cases')[2])[0]['case_id'] == cid
     assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
+
+
+def test_concurrent_trash_restore_requests_restore_only_once(server):
+    cid = _create(server)
+    before = server.workspace.view(cid)
+    status, _, raw = _call(server, 'POST', '/api/case/delete',
+                           dict(case_id=cid, title='Contract case'))
+    assert status == 200, raw
+    trash = json.loads(_call(server, 'GET', '/api/trash')[2])['cases']
+    trash_id = trash[0]['trash_id']
+    barrier = threading.Barrier(2)
+
+    def restore():
+        barrier.wait(timeout=5)
+        return _call(server, 'POST', '/api/case/restore', dict(trash_id=trash_id))
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(lambda _: restore(), range(2)))
+
+    assert sorted(status for status, _, _ in responses) == [200, 400]
+    assert server.workspace.view(cid) == before
+    assert json.loads(_call(server, 'GET', '/api/cases')[2])[0]['case_id'] == cid
+    assert json.loads(_call(server, 'GET', '/api/trash')[2])['cases'] == []
+    assert not (server.workspace.path / '.trash' / trash_id).exists()
 
 
 def test_trash_restore_refuses_to_overwrite_an_active_case(server, monkeypatch):

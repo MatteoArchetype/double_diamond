@@ -96,6 +96,44 @@ def test_trashed_case_can_be_restored_from_the_browser(browser_page):
     assert browser_page.locator("#research-case-title").inner_text() == "Recoverable browser case"
 
 
+def test_corrupt_trashed_case_is_unavailable_in_the_browser(
+    browser_page, browser_server
+):
+    browser_page.wait_for_selector("#workspace-home-title")
+    browser_page.get_by_role("button", name="Start a research case").click()
+    browser_page.get_by_label("What do you want to understand?").fill(
+        "How should an unreadable case be handled?"
+    )
+    browser_page.get_by_label("Case name").fill("Unavailable browser case")
+    browser_page.get_by_role("button", name="Start research").click()
+    browser_page.wait_for_selector("#research-case-title")
+
+    case_id = parse_qs(urlparse(browser_page.url).query)["case"][0]
+    browser_page.get_by_text("Rename or remove this case").click()
+    browser_page.get_by_label("Type the exact title to confirm").fill(
+        "Unavailable browser case"
+    )
+    browser_page.get_by_role("button", name="Move this case to trash").click()
+    browser_page.wait_for_selector("#workspace-home-title")
+
+    trash_folders = list((browser_server.workspace.path / ".trash").iterdir())
+    assert len(trash_folders) == 1
+    database = trash_folders[0] / "research.sqlite"
+    database.write_bytes(b"not a valid research database")
+
+    browser_page.reload()
+    browser_page.wait_for_selector("#workspace-home-title")
+    browser_page.get_by_role("button", name="Trash (1)").click()
+    browser_page.get_by_role("heading", name="Unavailable trashed case").wait_for()
+    assert browser_page.get_by_text(
+        "This case could not be verified. It was left unchanged in Trash.",
+        exact=True,
+    ).is_visible()
+    assert browser_page.get_by_role("button", name="Restore this case").count() == 0
+    assert database.read_bytes() == b"not a valid research database"
+    assert not (browser_server.workspace.path / case_id).exists()
+
+
 def test_synthetic_learning_example_opens_without_real_source_claims(browser_page):
     browser_page.wait_for_selector("#workspace-home-title")
     browser_page.get_by_role("button", name="Open practice example").click()
