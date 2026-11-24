@@ -1,5 +1,8 @@
 """Inspect or export a proposed research agenda. No run, contact or approval command."""
-import argparse,json,sqlite3,sys
+import argparse
+import json
+import sqlite3
+import sys
 from .research_agenda import read_agenda,export_agenda
 
 

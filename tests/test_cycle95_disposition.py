@@ -7,12 +7,12 @@ def test_bounded_claim_is_auditable():
 def test_withdraw_requires_withdrawn_status():
     try: make_disposition("C2","withdraw","Evidence was misread.",["E2"],"retained","retained",[],"high")
     except ValueError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 def test_promotion_requires_hypothesis_status():
     try: make_disposition("C3","promote_to_hypothesis","Suggestive only.",["E3"],"observed","retained",[],"medium")
     except ValueError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 def test_foundational_change_requires_review():
     d=make_disposition("C4","narrow","Evidence limits scope.",["E4"],"retained","qualified",["transferability"],"high")

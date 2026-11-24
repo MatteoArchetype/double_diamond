@@ -3,13 +3,13 @@
 Integrity verification is not authentication of sources, reviewers or earlier approvals.
 """
 import hashlib
-import json
 import os
 import tempfile
 import uuid
 from collections import Counter
 from contextlib import closing
 from pathlib import Path
+from . import case_publish
 from .checkpoints import restore_checkpoint,create_checkpoint_from_path,_ReadOnlySource
 from .persistent_ingestion import PersistentEvidenceStore,_encode
 from .review_ledger import ReviewLedger
@@ -31,7 +31,9 @@ def _read_state(database):
 def _unpack(data,root):
     digest=_payload(data);archive=root/'upload.zip';archive.write_bytes(data)
     folder=root/'case';folder.mkdir(mode=0o700)
-    manifest=restore_checkpoint(archive,folder/'research.sqlite')
+    # restore_checkpoint verifies the archive and publishes the database itself; the
+    # returned manifest is not needed here because the preview is read from state.
+    restore_checkpoint(archive,folder/'research.sqlite')
     state,sr,lr,_=_read_state(folder/'research.sqlite')
     workflow=getattr(state,'workflow',{})
     if workflow.get('workflow_version')!=3:raise ValueError('The browser can restore criterion-linked Double Diamond cases only. Use the checkpoint tools for earlier workflow formats.')
@@ -58,27 +60,17 @@ def restore_upload(workspace,data,*,expected_digest,_fault=None):
     if not workspace.is_dir() or workspace.is_symlink():raise ValueError('invalid restore workspace')
     def fault(name):
         if _fault is not None:_fault(name)
-    destination=None;reserved_inode=None;published=False
     with tempfile.TemporaryDirectory(prefix='.restore-',dir=workspace) as temp:
         staged,preview=_unpack(data,Path(temp));fault('after_verification')
         cid=uuid.uuid4().hex;destination=workspace/cid
-        # Reserve a fresh name exclusively. Publication replaces only our empty reservation.
-        destination.mkdir(mode=0o700);reserved_inode=destination.stat().st_ino
-        try:
-            counts=preview['evidence_counts']
-            metadata=dict(title='Restored · '+preview['title'],synthetic_example=False,restored_checkpoint=True,
-                synthetic_only=counts['synthetic']>0 and counts['source_records']==0,checkpoint_digest=digest)
-            meta=staged/'case-info.json';meta.write_text(_encode(metadata));os.chmod(meta,0o600)
-            fault('before_publication')
-            if destination.is_symlink() or destination.stat().st_ino!=reserved_inode:raise ValueError('restore reservation changed')
-            os.replace(staged,destination);published=True
-            fault('after_publication')
-            return dict(case_id=cid,restored_checkpoint=True,approval_granted=False,checkpoint_digest=digest)
-        finally:
-            # Never delete or roll back a published case, including an uncertain response.
-            if not published and destination is not None and destination.is_dir() and not destination.is_symlink() and destination.stat().st_ino==reserved_inode:
-                try:destination.rmdir()
-                except OSError:pass
+        reservation=case_publish.reserve(workspace,cid)
+        counts=preview['evidence_counts']
+        metadata=dict(title='Restored · '+preview['title'],synthetic_example=False,restored_checkpoint=True,
+            synthetic_only=counts['synthetic']>0 and counts['source_records']==0,checkpoint_digest=digest)
+        meta=staged/'case-info.json';meta.write_text(_encode(metadata));os.chmod(meta,0o600)
+        # Never delete or roll back a published case, including an uncertain response.
+        case_publish.publish(staged,destination,reservation,fault=fault)
+        return dict(case_id=cid,restored_checkpoint=True,approval_granted=False,checkpoint_digest=digest)
 
 
 def download_checkpoint(database,*,expected_revision):

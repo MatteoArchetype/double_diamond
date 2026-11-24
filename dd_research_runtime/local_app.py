@@ -1,6 +1,7 @@
 """Single-operator, loopback research interface. Optional public publication search."""
 import argparse
 import hmac
+from datetime import datetime
 import json
 import mimetypes
 import os
@@ -13,6 +14,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs,quote
+from . import case_publish
 from .persistent_ingestion import PersistentEvidenceStore,_encode
 from .runtime import ResearchState,ResearchInvariantError
 from .analysis_transactions import _keys,_text,_ids
@@ -26,6 +28,15 @@ from .document_library import DocumentLibrary
 from .reporting import report_is_current,render_markdown
 
 ACTOR='local-operator'
+# Windows has no mime database, so guess_type falls back to octet-stream for files the
+# app itself writes and serves. These names are fixed, so name them explicitly.
+CONTENT_TYPES={'.css':'text/css; charset=utf-8','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+               '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json',
+               '.md':'text/markdown; charset=utf-8','.pdf':'application/pdf','.png':'image/png','.svg':'image/svg+xml',
+               '.txt':'text/plain; charset=utf-8','.zip':'application/zip'}
+def content_type(name):
+    """Serve a known file with its real type instead of asking the platform."""
+    return CONTENT_TYPES.get(Path(name).suffix.lower()) or mimetypes.guess_type(name)[0] or 'application/octet-stream'
 CAPABILITIES={'workflow_write','analysis_write','evidence_ingest','gate_propose','gate_decide'}
 ASSETS=Path(__file__).parent/'webapp'
 # Anchored to the application folder so cases do not seem to vanish when the app is launched from another directory.
@@ -106,29 +117,52 @@ class Workspace:
                 title=meta['title']
                 state,revision,_,_=_read_state(self.case_path(folder.name)/'research.sqlite')
                 if getattr(state,'workflow',{}).get('workflow_version') not in {2,3}:raise ValueError('unsupported browser workflow')
-                result.append(dict(case_id=folder.name,title=title,synthetic_example=meta['synthetic_example'],phase=getattr(state,'workflow',{}).get('phase','brief'),status=getattr(state,'workflow',{}).get('status','active'),revision=revision))
+                result.append(dict(case_id=folder.name,title=title,synthetic_example=meta['synthetic_example'],phase=getattr(state,'workflow',{}).get('phase','brief'),status=getattr(state,'workflow',{}).get('status','active'),revision=revision,updated_at=int(database.stat().st_mtime)))
             except (OSError,ValueError,KeyError,TypeError,RuntimeError,sqlite3.Error,ResearchInvariantError):
                 unavailable.append(dict(case_id=folder.name,title=title[:400],reason='case_unavailable'))
+        # Most recently worked-on first: the identifier order is opaque to the operator.
+        result.sort(key=lambda case:(case['updated_at'],case['title'].casefold()),reverse=True)
         return dict(cases=result,unavailable_cases=unavailable)
 
     def cases(self):return self.catalog()['cases']
 
+    def _read_meta(self,folder):
+        meta_path=folder/'case-info.json'
+        if meta_path.is_symlink():raise ValueError('unsupported case metadata link')
+        meta=json.loads(meta_path.read_text())
+        if not isinstance(meta,dict) or not isinstance(meta.get('title'),str) or not meta['title'].strip() or type(meta.get('synthetic_example')) is not bool:raise ValueError('invalid case metadata')
+        return meta_path,meta
+
+    def rename(self,cid,title):
+        """Change the display title only; the research record is untouched."""
+        _text(title,'title');title=title.strip()
+        if len(title)>200:raise ValueError('Choose a title of up to 200 characters.')
+        folder=self.case_path(cid);meta_path,meta=self._read_meta(folder)
+        meta['title']=title
+        staged=folder/'.case-info.tmp'
+        try:
+            staged.write_text(_encode(meta));os.chmod(staged,0o600);os.replace(staged,meta_path)
+        finally:
+            if staged.exists():staged.unlink()
+        return dict(case_id=cid,title=title)
+
+    def delete(self,cid,confirm_title):
+        """Move a case into the workspace trash so a mistake is still recoverable."""
+        folder=self.case_path(cid);_,meta=self._read_meta(folder)
+        if not isinstance(confirm_title,str) or confirm_title.strip()!=meta['title']:
+            raise ValueError('Type the exact case title to confirm deletion.')
+        trash=self.path/'.trash';trash.mkdir(mode=0o700,exist_ok=True)
+        target=trash/(cid+'-'+datetime.now().strftime('%Y%m%dT%H%M%S'))
+        os.replace(folder,target)
+        return dict(case_id=cid,title=meta['title'],moved_to=target.name)
+
     def _publish_case(self,cid,folder,fault):
         """Expose an already verified staged case without replacing existing research."""
-        destination=self.path/cid;published=False
         fault('before_reservation')
-        destination.mkdir(mode=0o700);reserved_inode=destination.stat().st_ino
-        try:
-            fault('before_publication')
-            if destination.is_symlink() or destination.stat().st_ino!=reserved_inode:raise ValueError('case reservation changed')
-            os.replace(folder,destination);published=True
-            fault('after_publication')
-            return cid
-        finally:
-            # An uncertain response after publication must retain the complete case.
-            if not published and destination.is_dir() and not destination.is_symlink() and destination.stat().st_ino==reserved_inode:
-                try:destination.rmdir()
-                except OSError:pass
+        reservation=case_publish.reserve(self.path,cid)
+        # An uncertain response after publication must retain the complete case.
+        case_publish.publish(folder,self.path/cid,reservation,fault=fault)
+        return cid
 
     def create(self,data,*,_fault=None):
         _keys(data,{'title','question','scope','max_visits','max_alternatives'})
@@ -387,7 +421,7 @@ class Handler(BaseHTTPRequestHandler):
                 library=self.server.workspace.documents(query.get('case',[''])[0])
                 filename,data=library.original(query.get('document',[''])[0])
                 disposition="attachment; filename=source; filename*=UTF-8''"+quote(filename,safe='')
-                return self._reply(200,data,mimetypes.guess_type(filename)[0] or 'application/octet-stream',
+                return self._reply(200,data,content_type(filename),
                                    {'Content-Disposition':disposition})
             if path.path=='/api/documents':
                 query=parse_qs(path.query,keep_blank_values=True)
@@ -438,7 +472,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._reply(200,self.server.workspace.report(cid,rid),'text/markdown; charset=utf-8')
             assets={'/':'index.html','/app.js':'app.js','/style.css':'style.css','/visit-panels.js':'visit-panels.js'}
             if path.path not in assets:return self._reply(404,dict(error='Not found'))
-            asset=ASSETS/assets[path.path];return self._reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
+            asset=ASSETS/assets[path.path];return self._reply(200,asset.read_bytes(),content_type(asset.name))
         except (PermissionError,ValueError,KeyError,TypeError,OSError,RuntimeError,sqlite3.Error,ResearchInvariantError) as exc:self._reply(403 if isinstance(exc,PermissionError) else 409 if isinstance(exc,RuntimeError) else 400,dict(error=str(exc)))
 
     def do_POST(self):
@@ -451,8 +485,9 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Content-Type','').split(';')[0]!='application/octet-stream':
                     raise ValueError('Choose a Word .docx file.')
                 size=int(self.headers.get('Content-Length','-1'))
-                if self.headers.get('Transfer-Encoding') or not 0<size<=MAX_FILE_BYTES:
+                if self.headers.get('Transfer-Encoding') or size>MAX_FILE_BYTES:
                     raise ValueError('Choose a supported file no larger than 64 MiB.')
+                if size<1:raise ValueError('That file is empty. Choose a file with something in it.')
                 payload=self.rfile.read(size)
                 if len(payload)!=size:raise ValueError('Incomplete document upload.')
                 if path=='/api/document-transcript':
@@ -479,7 +514,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get('Content-Type','').split(';')[0]!='application/json':raise ValueError('JSON request required')
             size=int(self.headers.get('Content-Length','-1'))
             if self.headers.get('Transfer-Encoding') or not 0<=size<=2*1024*1024:raise ValueError('Request exceeds local interface limits.')
-            body=json.loads(self.rfile.read(size))
+            try:body=json.loads(self.rfile.read(size))
+            except json.JSONDecodeError:raise ValueError('The request could not be read. Refresh the page and try again.') from None
             if path=='/api/document-search':
                 _keys(body,{'case_id','query'},{'mode'})
                 return self._reply(200,self.server.workspace.documents(body['case_id']).search(body['query'],body.get('mode','phrase')))
@@ -511,6 +547,12 @@ class Handler(BaseHTTPRequestHandler):
                     _keys(body,{'kind'})
                     if body['kind']!='synthetic_learning_example':raise ValueError('Only the clearly labelled synthetic learning example can be created here.')
                     return self._reply(201,dict(case_id=self.server.workspace.demo(),synthetic_example=True))
+                if path=='/api/case/rename':
+                    _keys(body,{'case_id','title'})
+                    return self._reply(200,self.server.workspace.rename(body['case_id'],body['title']))
+                if path=='/api/case/delete':
+                    _keys(body,{'case_id','title'})
+                    return self._reply(200,self.server.workspace.delete(body['case_id'],body['title']))
                 if path=='/api/cases':return self._reply(201,dict(case_id=self.server.workspace.create(body)))
                 if path=='/api/action':
                     _keys(body,{'case_id','request'})

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "double-diamond"
+version = "0.1.0"
+description = "A local research workspace that turns an open question into a traceable research decision."
+requires-python = ">=3.10"
+dependencies = ["pypdf==7.0.1"]
+
+[project.scripts]
+double-diamond = "dd_research_runtime.local_app:main"
+
+[tool.setuptools]
+py-modules = [
+    "assessment",
+    "claim_disposition",
+    "contradiction",
+    "cycle_state",
+    "pipeline_state",
+    "research_pipeline",
+    "retrieval_adapter",
+]
+
+[tool.setuptools.packages.find]
+include = ["dd_research_runtime*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# A hung test should fail with a traceback instead of burning the job timeout.
+# The Windows job previously sat for 30 minutes with no output at all.
+timeout = 180
+
+[tool.coverage.run]
+branch = true
+source = ["dd_research_runtime", "assessment", "claim_disposition", "contradiction",
+          "cycle_state", "pipeline_state", "research_pipeline", "retrieval_adapter"]
+omit = ["dd_research_runtime/*_demo.py", "dd_research_runtime/*_cli.py"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 200
+extend-exclude = ["research-workspace"]
+
+[tool.ruff.lint]
+# The codebase is written in a dense one-line style; E501/E7xx are excluded so the
+# gate reports real defects instead of formatting differences. Fixing the style is a
+# separate, mechanical change.
+select = ["F", "E4", "E9", "B", "UP"]
+ignore = ["UP006", "UP035", "SIM108", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules import pytest fixtures by name, which static analysis reads as unused,
+# and deliberately shadow fixture names inside individual tests.
+"tests/*" = ["F401", "F811"]

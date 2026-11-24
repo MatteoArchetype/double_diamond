@@ -108,7 +108,7 @@ class DocumentLibrary:
             raise ValueError('This paragraph is unavailable in the saved document preview.')
         return dict(filename=result['filename'], number=number, paragraphs=paragraphs,
                     passage_notice=result['passage_notice'],
-                    location=next((p.get('location', f'Main-body paragraph {number}') for p in paragraphs if p['number']==number)),
+                    location=next(p.get('location', f'Main-body paragraph {number}') for p in paragraphs if p['number']==number),
                     transcript_sha256=result.get('transcript_sha256'))
 
     def search(self, query, mode="phrase"):

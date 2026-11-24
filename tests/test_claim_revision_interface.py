@@ -52,7 +52,8 @@ def test_non_draft_decision_records_are_not_revisable_through_this_form(case,sta
     w,cid=case
     # A verified adopted fixture state supplies decision statuses; no actual human approval.
     from dd_research_runtime.runtime import ResearchState
-    import json,uuid
+    import json
+    import uuid
     new_cid=uuid.uuid4().hex;folder=w.path/new_cid;folder.mkdir()
     state=ResearchState(research_id='Decision-status fixture');state.claims['C1']=dict(claim_id='C1',claim='Decision record fixture',claim_type='descriptive',evidence_ids=[],status=status,disposition=disposition,analysis_status='advisory')
     # Use a normal case's workflow so the read-only browser guidance can inspect it.

@@ -126,7 +126,8 @@ def test_http_get_routes_do_not_serve_private_files(workspace,path,status):
     ({'Content-Type':'application/json','Content-Length':'1'},b'{'),
 ])
 def test_http_rejects_invalid_payload_before_mutation(workspace,headers,body):
-    import io,threading
+    import io
+    import threading
     handler=object.__new__(Handler);server=FakeServer();server.workspace=workspace;server.mutation_lock=threading.Lock()
     handler.server=server;handler.headers=dict(Host='127.0.0.1:12345',Origin=server.origin,Authorization='Bearer private-token',**headers)
     handler.path='/api/cases';handler.rfile=io.BytesIO(body);responses=[];handler._reply=lambda *args:responses.append(args)

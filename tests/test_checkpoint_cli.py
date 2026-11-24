@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -127,10 +128,12 @@ def test_readonly_connection_rejects_write(store):
 
 
 def test_uri_special_characters_and_spaces(store,tmp_path):
-    source=tmp_path/'source ? # %.db'
+    # '?' cannot appear in a Windows file name, so only other platforms exercise it.
+    suffix='? # %.db' if os.name!='nt' else '# %.db'
+    source=tmp_path/('source '+suffix)
     # Closed rollback-journal source has no pending WAL; copy is fixture setup only.
     source.write_bytes(Path(store.ledger.path).read_bytes())
-    archive=tmp_path/'backup ? # %.zip'
+    archive=tmp_path/('backup '+suffix.replace('.db','.zip'))
     success(run_cli('create',source,archive))
     success(run_cli('inspect',archive))
 

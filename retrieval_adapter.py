@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 from urllib.parse import urlparse
 import math
 import re
@@ -48,8 +48,8 @@ class RetrievedDocument:
     content_location: str
     provenance: str
     synthetic: bool = False
-    published_at: Optional[str] = None
-    independence_cluster: Optional[str] = None
+    published_at: str | None = None
+    independence_cluster: str | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:

@@ -7,7 +7,7 @@ external-action logic.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any
 
 from .next_action_state import make_next_action, record_next_action_in_cycle
 

@@ -3,7 +3,7 @@ from contradiction import assess_contradiction, contradiction_consequence
 def test_requires_multiple_items():
     try: assess_contradiction('X1','C1',['E1'],'issue','same','unresolved','material','retrieve',['created'])
     except ValueError: return
-    assert False
+    raise AssertionError('expected this call to be rejected')
 
 def test_unresolved_blocks_unqualified():
     a=assess_contradiction('X2','C2',['E2','E3'],'Different outcomes','partially comparable','unresolved','Claim could change','targeted retrieval',['created','reviewed'])

@@ -132,10 +132,7 @@ def apply_commands(state,commands,*,actor,rationale,operation_id,timestamp):
             for name in ('review_required','foundational','consequential'):
                 if name in command and type(command[name]) is not bool:raise ValueError(name+' must be boolean')
             disposition=make_disposition(cid,command['disposition'],command['rationale'],ids,command['prior_status'],command['new_status'],command['material_uncertainties'],command['decision_relevance'],command.get('review_required',False))
-            if requires_human_review(disposition,command.get('foundational',False),command.get('consequential',False)):
-                from .gate_transactions import consume
-                consume(state,command,operation_id)
-            elif 'gate_id' in command:
+            if requires_human_review(disposition,command.get('foundational',False),command.get('consequential',False)) or 'gate_id' in command:
                 from .gate_transactions import consume
                 consume(state,command,operation_id)
             allowed_status={'retain_bounded':{'retained'},'narrow':{'narrowed'},'qualify':{'qualified'},'unresolved':{'unresolved','unknown'},'withdraw':{'withdrawn','retracted'},'promote_to_hypothesis':{'hypothesis'}}
