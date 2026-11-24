@@ -221,3 +221,32 @@ def test_case_checkpoint_can_be_downloaded_and_restored_separately(
     assert browser_page.locator("#research-case-title").inner_text() == (
         "Browser backup smoke case"
     )
+
+
+def test_oversized_checkpoint_shows_cli_guidance_without_upload(
+    browser_page, browser_server, tmp_path
+):
+    browser_page.wait_for_selector("#workspace-home-title")
+    browser_page.get_by_role("button", name="Restore a backup").click()
+
+    oversized = tmp_path / "oversized-checkpoint.zip"
+    with oversized.open("wb") as checkpoint:
+        checkpoint.truncate(32 * 1024 * 1024 + 1)
+    browser_page.get_by_label("Choose checkpoint ZIP").set_input_files(oversized)
+
+    requests = []
+    browser_page.on(
+        "request",
+        lambda request: requests.append(request.url)
+        if "/api/checkpoint/inspect" in request.url
+        else None,
+    )
+    browser_page.get_by_role("button", name="Inspect selected checkpoint").click()
+    error = browser_page.locator(".notice.error")
+    error.wait_for()
+    message = error.inner_text()
+    assert "browser 32 MiB transfer limit" in message
+    assert ".venv/bin/python -m dd_research_runtime.checkpoint_cli restore-case" in message
+    assert r".\.venv\Scripts\python.exe" in message
+    assert requests == []
+    assert browser_server.workspace.cases() == []
